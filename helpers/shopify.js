@@ -3,12 +3,12 @@ const express = require("express");
 const db = require("../models/index");
 const axios = require("axios");
 const moment = require("moment-timezone");
-const { filterAndUpdateProducts, filterAndRemove, filterOrders, updateOrders, updateStatuses, checkDuplicateShopify } = require("./helpers");
+const { filterAndUpdateProducts, filterAndRemove, filterOrders, updateOrders, updateStatuses } = require("./helpers");
 
 exports.validateShopify = async (req, res, next) => {
 	try {
 		console.log(req.body);
-		const { userEmail, shopName, apiKey, password } = req.body;
+		const { email, shopName, apiKey, password } = req.body;
 		const baseURL = `https://${shopName}.myshopify.com/admin/api/2021-04`;
 		const URL = `https://${apiKey}:${password}@${shopName}.myshopify.com/admin/api/2021-04/shop.json`;
 		//const buff = Buffer.from(`${apiKey}:${password}`, 'utf-8');
@@ -20,10 +20,10 @@ exports.validateShopify = async (req, res, next) => {
 		} = await axios.get(URL);
 		//check if a user has an account integrated with this shopify account already
 		const users = await db.User.find({"shopDetails.shopId": id})
-		console.log(users)
+		console.log("Duplicate shopify users", users.length)
 		if (!users.length) {
 			await db.User.findOneAndUpdate(
-				{ email: userEmail },
+				{ email },
 				{ shopDetails: { baseURL, accessToken: password, shopId: id, domain, country, shopOwner: shop_owner } },
 				{ new: true }
 			);		// append the shop id to user mongo
@@ -112,12 +112,12 @@ exports.getShopifyOrders = async (req, res, next) => {
 		console.log("Number of orders:", shopifyOrders.length);
 		const postcodes = (await db.PostCode.find()).map(item => item.Postcode);
 		let filteredOrders = filterOrders(shopifyOrders, postcodes);
-		// compare shopify orders with orders in db
-		// if order ids match, update order status with order status stored in db
 		const {
 			shopDetails: { orders: dbOrders },
 		} = await db.User.findOne({ email }, "shopDetails.orders");
-		//check if there are any orders in the database
+		// check if there are any orders in the database
+		// compare shopify orders with orders in db
+		// if order ids match, update order status with order status stored in db
 		let finalOrders = dbOrders.length > 0 ? updateStatuses(filteredOrders, dbOrders) : filteredOrders
 		await db.User.findOneAndUpdate({ email }, { "shopDetails.orders": finalOrders }, { new: true });
 		res.status(200).json({
