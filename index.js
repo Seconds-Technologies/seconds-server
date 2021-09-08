@@ -29,21 +29,6 @@ app.use(
     authorizeUser
 );
 
-/*app.get("/api/messages", authenticateUser, async function (req, res, next) {
-    try {
-        let messages = await db.Message.find()
-            .sort({createdAt: "desc"})
-            .populate("user", {
-                username: true,
-                profileImageURL: true
-            });
-        return res.status(200).json(messages)
-    } catch (err) {
-        console.error(err)
-        return next(err)
-    }
-})*/
-
 //routes
 app.use((req, res, next) => {
     let err = new Error("Not Found");
@@ -55,4 +40,5 @@ app.use(errorHandler)
 
 app.listen(PORT, () => {
     console.log(`Server is listening on port ${PORT}...`)
+    console.log(process.env.MONGODB_URI)
 });
