@@ -40,7 +40,14 @@ const userSchema = new mongoose.Schema({
 	createdAt: {
 		type: Date,
 		default: Date.now()
-	}
+	},
+	apiKey: {
+		type: String,
+	},
+	selectionStrategy: {
+		type: String,
+	},
+	deliveryJobs: [],
 });
 
 userSchema.pre("save", async function(next) {
@@ -64,6 +71,6 @@ userSchema.methods.comparePassword = async function(candidatePassword, next) {
 	}
 };
 
-const User = mongoose.model("User", userSchema);
+	const User = mongoose.model("User", userSchema);
 
 module.exports = User;

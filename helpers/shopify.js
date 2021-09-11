@@ -98,7 +98,7 @@ exports.getShopifyOrders = async (req, res, next) => {
 	try {
 		const { baseURL, token, email, createdAt } = req.body;
 		let date = moment(createdAt).startOf("hour").toISOString();
-		let dataEdt = moment(date).tz("America/New_York").format();
+		let dataEdt = moment(date).subtract(3, "years").tz("America/New_York").format();
 		console.log(dataEdt);
 		const url = baseURL + `/orders.json?created_at_min=${dataEdt}&status=any`;
 		console.log(url, token, email);
@@ -110,7 +110,7 @@ exports.getShopifyOrders = async (req, res, next) => {
 			},
 		});
 		console.log("Number of orders:", shopifyOrders.length);
-		const postcodes = (await db.PostCode.find()).map(item => item.Postcode);
+		const postcodes = (await db.PostCode.find()).map(item => item['Postcode']);
 		let filteredOrders = filterOrders(shopifyOrders, postcodes);
 		const {
 			shopDetails: { orders: dbOrders },

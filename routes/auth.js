@@ -19,9 +19,11 @@ const upload = multer({
     }
 })
 
-const { register, login } = require("../helpers/auth")
+const { register, login, generateSecurityKeys, updateProfile} = require("../helpers/auth")
 
 router.post("/register", upload.single('profileImageURL'), register);
 router.post("/login", login);
+router.post("/token", generateSecurityKeys);
+router.post("/update", updateProfile)
 
 module.exports = router;
