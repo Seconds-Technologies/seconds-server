@@ -32,8 +32,8 @@ const userSchema = new mongoose.Schema({
 		products: [],
 		shopId: String,
 		shopOwner: String,
-        country: String,
-        domain: String,
+		country: String,
+		domain: String,
 		baseURL: String,
 		accessToken: String
 	},
@@ -50,7 +50,7 @@ const userSchema = new mongoose.Schema({
 	jobs: [],
 });
 
-userSchema.pre("save", async function(next) {
+userSchema.pre("save", async function (next) {
 	try {
 		if (!this.isModified("password")) {
 			return next();
@@ -62,7 +62,7 @@ userSchema.pre("save", async function(next) {
 	}
 });
 
-userSchema.methods.comparePassword = async function(candidatePassword, next) {
+userSchema.methods.comparePassword = async function (candidatePassword, next) {
 	try {
 		return await bcrypt.compare(candidatePassword, this.password);
 	} catch (err) {
@@ -71,6 +71,6 @@ userSchema.methods.comparePassword = async function(candidatePassword, next) {
 	}
 };
 
-	const User = mongoose.model("User", userSchema);
+const User = mongoose.model("User", userSchema);
 
 module.exports = User;
