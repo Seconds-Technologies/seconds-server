@@ -2,6 +2,7 @@ const db = require("../models/index");
 const jwt = require("jsonwebtoken");
 const path = require("path");
 const crypto = require("crypto");
+const { nanoid } = require('nanoid')
 
 const login = async (req, res, next) => {
 	try {
@@ -107,9 +108,8 @@ const generateSecurityKeys = async (req, res, next) => {
 const updateProfile = async (req, res, next) => {
 	try {
 		const { id, ...params } = req.body;
-		console.log(id, params)
 		const { firstname, lastname, email, company } = await db.User.findByIdAndUpdate(id, {...params}, { new: true})
-		console.log("User",  { firstname, lastname, email, company })
+		console.log("User",  { id, firstname, lastname, email, company })
 		return res.status(200).json({
 			firstname,
 			lastname,
@@ -125,4 +125,24 @@ const updateProfile = async (req, res, next) => {
 	}
 }
 
-module.exports = { register, login, generateSecurityKeys, updateProfile }
+const updateProfileImage = async (req, res, next) => {
+	try {
+		console.log(...req)
+		if (req.file) {
+			const path = req.file.path;
+			console.log(path)
+			const targetPath = path.join(__dirname, `./uploads/${nanoid(10)}`)
+			console.log(targetPath)
+		}
+		return res.status(200).json({
+			message: "image uploaded!"
+		})
+	} catch (err) {
+		return next({
+			status: 400,
+			message: err.message
+		})
+	}
+}
+
+module.exports = { register, login, generateSecurityKeys, updateProfile, updateProfileImage }
