@@ -107,10 +107,14 @@ const generateSecurityKeys = async (req, res, next) => {
 const updateProfile = async (req, res, next) => {
 	try {
 		const { id, ...params } = req.body;
-		console.log(params)
-		const user  = db.User.findByIdAndUpdate(id, params, { new: true})
-		console.log("User", user)
+		console.log(id, params)
+		const { firstname, lastname, email, company } = await db.User.findByIdAndUpdate(id, {...params}, { new: true})
+		console.log("User",  { firstname, lastname, email, company })
 		return res.status(200).json({
+			firstname,
+			lastname,
+			email,
+			company,
 			message: "Profile updated successfully!"
 		})
 	} catch (err) {
