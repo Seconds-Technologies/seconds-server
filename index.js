@@ -43,5 +43,5 @@ app.use(errorHandler)
 
 app.listen(PORT, () => {
     console.log(`Server is listening on port ${PORT}...`)
-    console.log(process.env.MONGODB_URI)
+    console.log("production DB:", process.env.MONGODB_URI)
 });
