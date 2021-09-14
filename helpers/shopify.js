@@ -52,7 +52,6 @@ exports.getShopifyDetails = async (req, res, next) => {
 		console.log(req.body);
 		let { email } = req.body;
 		let { shopDetails } = await db.User.findOne({ email });
-		console.log(shopDetails);
 		if (shopDetails.accessToken || shopDetails.shopId) {
 			res.status(200).json({
 				...shopDetails,
