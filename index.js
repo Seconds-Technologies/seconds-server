@@ -8,6 +8,7 @@ const bodyParser = require('body-parser');
 const errorHandler = require('./helpers/error');
 const authRoutes = require('./routes/auth');
 const shopifyRoutes = require('./routes/shopify');
+const jobRoutes = require('./routes/jobs');
 const { authorizeUser, authenticateUser } = require('./middleware/auth');
 
 const app = express();
@@ -27,6 +28,7 @@ app.get('/server', (req, res) => {
 app.use('/uploads', express.static('uploads'));
 app.use('/server/auth', authRoutes);
 app.use('/server/shopify', shopifyRoutes);
+app.use('/server/jobs', jobRoutes);
 app.use(
     authenticateUser,
     authorizeUser
