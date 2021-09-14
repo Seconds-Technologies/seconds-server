@@ -172,4 +172,4 @@ const downloadProfileImage = async (req, res, next) => {
 
 	}
 }
-module.exports = {register, login, generateSecurityKeys, updateProfile, uploadProfileImage, downloadProfileImage}
+module.exports = { register, login, generateSecurityKeys, updateProfile, uploadProfileImage, downloadProfileImage }
