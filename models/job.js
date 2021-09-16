@@ -7,7 +7,7 @@ const jobSchema = new mongoose.Schema({
 		unique: true
 	},
 	jobSpecification: {
-		id: [],
+		id: String,
 		packages: []
 	},
 	selectedConfiguration: {

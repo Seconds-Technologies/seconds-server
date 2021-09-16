@@ -24,8 +24,7 @@ const {
 	login,
 	generateSecurityKeys,
 	updateProfile,
-	uploadProfileImage,
-	downloadProfileImage
+	uploadProfileImage
 } = require("../helpers/auth")
 
 router.post("/register", register);
@@ -33,6 +32,5 @@ router.post("/login", login);
 router.post("/token", generateSecurityKeys);
 router.post("/update", updateProfile)
 router.post("/upload", upload.single('img'), uploadProfileImage)
-router.post("/download", downloadProfileImage)
 
 module.exports = router;
