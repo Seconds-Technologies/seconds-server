@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const bcrypt = require("bcrypt");
+const {Schema} = require("mongoose");
 
 const userSchema = new mongoose.Schema({
 	email: {
@@ -23,11 +24,17 @@ const userSchema = new mongoose.Schema({
 		type: String,
 		required: true
 	},
-	profileImageURL: {
-		type: String,
-		default: ""
+	profileImage: {
+		file: {
+			type: String,
+			default: ""
+		},
+		data: {
+			type: String,
+			default: ""
+		}
 	},
-	shopDetails: {
+	shopify: {
 		orders: [],
 		products: [],
 		shopId: String,
@@ -43,9 +50,11 @@ const userSchema = new mongoose.Schema({
 	},
 	apiKey: {
 		type: String,
+		default: ""
 	},
 	selectionStrategy: {
 		type: String,
+		default: "eta"
 	},
 	jobs: [],
 });

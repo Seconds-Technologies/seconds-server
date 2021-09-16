@@ -11,7 +11,17 @@ const login = async (req, res, next) => {
 		let user = await db.User.findOne({
 			email: req.body.email
 		});
-		let {_id, firstname, lastname, email, company, createdAt, apiKey, profileImageURL} = user;
+		let {
+			_id,
+			firstname,
+			lastname,
+			email,
+			company,
+			createdAt,
+			apiKey,
+			shopify,
+			profileImage: {data: profileImageData}
+		} = user;
 		let isMatch = await user.comparePassword(req.body.password);
 		if (isMatch) {
 			let token = jwt.sign({
@@ -23,7 +33,16 @@ const login = async (req, res, next) => {
 				process.env.SECRET_KEY
 			);
 			return res.status(200).json({
-				id: _id, firstname, lastname, email, company, createdAt, profileImageURL, token, apiKey,
+				id: _id,
+				firstname,
+				lastname,
+				email,
+				company,
+				createdAt,
+				profileImageData,
+				shopify: shopify.accessToken,
+				token,
+				apiKey,
 				message: "You have logged in Successfully!"
 			});
 		} else {
@@ -45,8 +64,8 @@ const register = async (req, res, next) => {
 	console.log("req.body:", req.body);
 	try {
 		//create a user
-		let user = await db.User.create(req.file ? {...req.body, profileImageURL: req.file.path} : {...req.body});
-		let {id, firstname, lastname, email, company, createdAt, apiKey, profileImageURL} = user;
+		let user = await db.User.create(req.file ? {...req.body, "profileImage.file": req.file.path} : {...req.body});
+		let {id, firstname, lastname, email, company, createdAt, apiKey, shopify, profileImage: {data: profileImageData}} = user;
 		//create a jwt token
 		let token = jwt.sign({
 				id,
@@ -63,7 +82,8 @@ const register = async (req, res, next) => {
 			email,
 			createdAt,
 			company,
-			profileImageURL,
+			profileImageData,
+			shopify: shopify.accessToken,
 			apiKey,
 			token,
 			message: "New user registered successfully!"
@@ -135,11 +155,18 @@ const uploadProfileImage = async (req, res, next) => {
 		if (Object.keys(file).length) {
 			const path = req.file.path;
 			console.log(path)
-			//const targetPath = path.join(__dirname, `./uploads/${nanoid(10)}`)
-			const { profileImageURL } = await db.User.findByIdAndUpdate(id, {"profileImageURL": `${shorthash.unique(file.originalname)}.jpg`}, {new: true})
-			console.log("Image File:", profileImageURL)
+			const filename = `${shorthash.unique(file.originalname)}.jpg`
+			console.log("Image File:", filename)
+			let imagePath = `./uploads/${filename}`
+			let img = fs.readFileSync(imagePath, {encoding: 'base64'})
+			//update the profile image in user db
+			const {profileImage} = await db.User.findByIdAndUpdate(id, {
+				"profileImage.file": filename,
+				"profileImage.data": img
+			}, {new: true})
+			console.log(profileImage)
 			return res.status(200).json({
-				imageFile: profileImageURL,
+				base64Image: img,
 				message: "image uploaded!"
 			})
 		}
@@ -155,7 +182,7 @@ const uploadProfileImage = async (req, res, next) => {
 	}
 }
 
-const downloadProfileImage = async (req, res, next) => {
+/*const downloadProfileImage = async (req, res, next) => {
 	try {
 		console.log(req.body)
 		let {imageFile} = req.body;
@@ -163,6 +190,7 @@ const downloadProfileImage = async (req, res, next) => {
 		let imagePath = `./uploads/${imageFile}`
 		let img = fs.readFileSync(imagePath, {encoding: 'base64'})
 		console.log(img)
+		//update the profile image in user db
 		res.status(200).send(img)
 	} catch (e) {
 		return next({
@@ -171,5 +199,5 @@ const downloadProfileImage = async (req, res, next) => {
 		})
 
 	}
-}
-module.exports = { register, login, generateSecurityKeys, updateProfile, uploadProfileImage, downloadProfileImage }
+}*/
+module.exports = {register, login, generateSecurityKeys, updateProfile, uploadProfileImage}
