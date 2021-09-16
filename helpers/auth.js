@@ -3,7 +3,7 @@ const jwt = require("jsonwebtoken");
 const path = require("path");
 const fs = require("fs");
 const crypto = require("crypto");
-const {nanoid} = require('nanoid')
+const { nanoid } = require('nanoid')
 const shorthash = require("shorthash");
 
 const login = async (req, res, next) => {
@@ -182,22 +182,4 @@ const uploadProfileImage = async (req, res, next) => {
 	}
 }
 
-/*const downloadProfileImage = async (req, res, next) => {
-	try {
-		console.log(req.body)
-		let {imageFile} = req.body;
-		console.log(imageFile)
-		let imagePath = `./uploads/${imageFile}`
-		let img = fs.readFileSync(imagePath, {encoding: 'base64'})
-		console.log(img)
-		//update the profile image in user db
-		res.status(200).send(img)
-	} catch (e) {
-		return next({
-			status: 400,
-			message: "Unable to download profile picture!"
-		})
-
-	}
-}*/
 module.exports = {register, login, generateSecurityKeys, updateProfile, uploadProfileImage}
