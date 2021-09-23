@@ -3,7 +3,7 @@ const jwt = require("jsonwebtoken");
 const path = require("path");
 const fs = require("fs");
 const crypto = require("crypto");
-const { nanoid } = require('nanoid')
+const {nanoid} = require('nanoid')
 const shorthash = require("shorthash");
 
 const login = async (req, res, next) => {
@@ -19,6 +19,7 @@ const login = async (req, res, next) => {
 			company,
 			createdAt,
 			apiKey,
+			selectionStrategy,
 			shopify,
 			profileImage: {data: profileImageData}
 		} = user;
@@ -43,6 +44,7 @@ const login = async (req, res, next) => {
 				shopify: shopify.accessToken,
 				token,
 				apiKey,
+				selectionStrategy,
 				message: "You have logged in Successfully!"
 			});
 		} else {
@@ -65,7 +67,18 @@ const register = async (req, res, next) => {
 	try {
 		//create a user
 		let user = await db.User.create(req.file ? {...req.body, "profileImage.file": req.file.path} : {...req.body});
-		let {id, firstname, lastname, email, company, createdAt, apiKey, shopify, profileImage: {data: profileImageData}} = user;
+		let {
+			id,
+			firstname,
+			lastname,
+			email,
+			company,
+			createdAt,
+			apiKey,
+			shopify,
+			selectionStrategy,
+			profileImage: {data: profileImageData}
+		} = user;
 		//create a jwt token
 		let token = jwt.sign({
 				id,
@@ -85,6 +98,7 @@ const register = async (req, res, next) => {
 			profileImageData,
 			shopify: shopify.accessToken,
 			apiKey,
+			selectionStrategy,
 			token,
 			message: "New user registered successfully!"
 		});
