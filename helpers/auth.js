@@ -5,6 +5,7 @@ const fs = require("fs");
 const crypto = require("crypto");
 const {nanoid} = require('nanoid')
 const shorthash = require("shorthash");
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
 const login = async (req, res, next) => {
 	try {
@@ -66,19 +67,18 @@ const register = async (req, res, next) => {
 	console.log("req.body:", req.body);
 	try {
 		//create a user
-		let user = await db.User.create(req.file ? {...req.body, "profileImage.file": req.file.path} : {...req.body});
-		let {
-			id,
-			firstname,
-			lastname,
-			email,
-			company,
-			createdAt,
-			apiKey,
-			shopify,
-			selectionStrategy,
-			profileImage: {data: profileImageData}
-		} = user;
+		console.log('------++++++++')
+		const customer = await stripe.customers.create({
+			email: req.body.email,
+		});
+		console.log(customer)
+		console.log(customer._id)
+		console.log('------++++++++')
+		console.log(req.body.stripeCustomerId);
+		// req.body.stripeCustomerId = customer.id;
+		// console.log(req.body.stripeCustomerId);
+		let user = await db.User.create(req.file ? {...req.body, "profileImage.file": req.file.path, "stripeCustomerId": customer.id} : {...req.body, "stripeCustomerId": customer.id});
+		let {id, firstname, lastname, email, company, createdAt, apiKey, shopify, profileImage: {data: profileImageData}, stripeCustomerId} = user;
 		//create a jwt token
 		let token = jwt.sign({
 				id,
@@ -100,6 +100,7 @@ const register = async (req, res, next) => {
 			apiKey,
 			selectionStrategy,
 			token,
+			stripeCustomerId,
 			message: "New user registered successfully!"
 		});
 	} catch (err) {

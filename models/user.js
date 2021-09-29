@@ -56,6 +56,10 @@ const userSchema = new mongoose.Schema({
 		type: String,
 		default: "eta"
 	},
+	stripeCustomerId: {
+		type: String,
+		default: "",
+	},
 	jobs: [],
 });
 
