@@ -22,7 +22,8 @@ const login = async (req, res, next) => {
 			apiKey,
 			selectionStrategy,
 			shopify,
-			profileImage: {data: profileImageData}
+			profileImage: {data: profileImageData},
+			stripeCustomerId
 		} = user;
 		let isMatch = await user.comparePassword(req.body.password);
 		if (isMatch) {
@@ -46,6 +47,7 @@ const login = async (req, res, next) => {
 				token,
 				apiKey,
 				selectionStrategy,
+				stripeCustomerId,
 				message: "You have logged in Successfully!"
 			});
 		} else {
