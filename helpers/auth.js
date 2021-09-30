@@ -73,14 +73,10 @@ const register = async (req, res, next) => {
 		const customer = await stripe.customers.create({
 			email: req.body.email,
 		});
-		console.log(customer)
-		console.log(customer._id)
-		console.log('------++++++++')
-		console.log(req.body.stripeCustomerId);
 		// req.body.stripeCustomerId = customer.id;
 		// console.log(req.body.stripeCustomerId);
 		let user = await db.User.create(req.file ? {...req.body, "profileImage.file": req.file.path, "stripeCustomerId": customer.id} : {...req.body, "stripeCustomerId": customer.id});
-		let {id, firstname, lastname, email, company, createdAt, apiKey, shopify, profileImage: {data: profileImageData}, stripeCustomerId} = user;
+		let {id, firstname, lastname, email, company, createdAt, apiKey, paymentMethodId, selectionStrategy, shopify, profileImage: {data: profileImageData}, stripeCustomerId} = user;
 		//create a jwt token
 		let token = jwt.sign({
 				id,
@@ -103,6 +99,7 @@ const register = async (req, res, next) => {
 			selectionStrategy,
 			token,
 			stripeCustomerId,
+			paymentMethodId,
 			message: "New user registered successfully!"
 		});
 	} catch (err) {
