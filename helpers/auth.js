@@ -22,6 +22,7 @@ const login = async (req, res, next) => {
 			apiKey,
 			selectionStrategy,
 			shopify,
+			paymentMethodId,
 			profileImage: {data: profileImageData},
 			stripeCustomerId
 		} = user;
@@ -48,6 +49,7 @@ const login = async (req, res, next) => {
 				apiKey,
 				selectionStrategy,
 				stripeCustomerId,
+				paymentMethodId,
 				message: "You have logged in Successfully!"
 			});
 		} else {
