@@ -68,13 +68,16 @@ const login = async (req, res, next) => {
 };
 
 const register = async (req, res, next) => {
-	console.log("req.body:", req.body);
 	try {
 		//create a user
-		console.log('------++++++++')
+		console.log('----------------------------')
 		const customer = await stripe.customers.create({
 			email: req.body.email,
+			name: `${req.body.firstname} ${req.body.lastname}`,
+			description: req.body.company
 		});
+		console.log(customer)
+		console.log('----------------------------')
 		// req.body.stripeCustomerId = customer.id;
 		// console.log(req.body.stripeCustomerId);
 		let user = await db.User.create(req.file ? {
