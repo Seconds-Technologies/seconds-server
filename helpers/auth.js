@@ -24,7 +24,8 @@ const login = async (req, res, next) => {
 			shopify,
 			paymentMethodId,
 			profileImage: {data: profileImageData},
-			stripeCustomerId
+			stripeCustomerId,
+			subscriptionId
 		} = user;
 		let isMatch = await user.comparePassword(req.body.password);
 		if (isMatch) {
@@ -50,6 +51,7 @@ const login = async (req, res, next) => {
 				selectionStrategy,
 				stripeCustomerId,
 				paymentMethodId,
+				subscriptionId,
 				message: "You have logged in Successfully!"
 			});
 		} else {
@@ -95,6 +97,7 @@ const register = async (req, res, next) => {
 			apiKey,
 			paymentMethodId,
 			selectionStrategy,
+			subscriptionId,
 			shopify,
 			profileImage: {data: profileImageData},
 			stripeCustomerId
@@ -122,6 +125,7 @@ const register = async (req, res, next) => {
 			token,
 			stripeCustomerId,
 			paymentMethodId,
+			subscriptionId,
 			message: "New user registered successfully!"
 		});
 	} catch (err) {
