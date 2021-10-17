@@ -1,6 +1,5 @@
 const mongoose = require("mongoose");
 const bcrypt = require("bcrypt");
-const {Schema} = require("mongoose");
 
 const userSchema = new mongoose.Schema({
 	email: {
@@ -75,8 +74,7 @@ const userSchema = new mongoose.Schema({
 	subscriptionId: {
 		type: String,
 		default: ""
-	},
-	jobs: [],
+	}
 });
 
 userSchema.pre("save", async function (next) {

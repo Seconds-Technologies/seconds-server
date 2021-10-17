@@ -8,6 +8,7 @@ const shorthash = require("shorthash");
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
 const login = async (req, res, next) => {
+	console.log(req.body)
 	try {
 		let user = await db.User.findOne({
 			email: req.body.email
