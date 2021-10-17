@@ -74,7 +74,8 @@ const userSchema = new mongoose.Schema({
 	subscriptionId: {
 		type: String,
 		default: ""
-	}
+	},
+	jobs: []
 });
 
 userSchema.pre("save", async function (next) {
