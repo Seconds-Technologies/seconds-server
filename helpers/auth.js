@@ -1,7 +1,5 @@
 const db = require("../models/index");
 const jwt = require("jsonwebtoken");
-const path = require("path");
-const fs = require("fs");
 const crypto = require("crypto");
 const {nanoid} = require('nanoid')
 const shorthash = require("shorthash");
@@ -101,7 +99,8 @@ const register = async (req, res, next) => {
 		const customer = await stripe.customers.create({
 			email: req.body.email,
 			name: `${req.body.firstname} ${req.body.lastname}`,
-			description: req.body.company
+			description: req.body.company,
+			phone: req.body.phone
 		});
 		console.log(customer)
 		console.log('----------------------------')
@@ -198,9 +197,20 @@ const generateSecurityKeys = async (req, res, next) => {
 
 const updateProfile = async (req, res, next) => {
 	try {
-		const {id, ...data} = req.body;
-		const {firstname, lastname, email, company} = await db.User.findByIdAndUpdate(id, {...data}, {new: true})
-		console.log("User", {id, firstname, lastname, email, company})
+		const {id, data} = req.body;
+		// update user info in database
+		const {firstname, lastname, email, company, stripeCustomerId, phone} = await db.User.findByIdAndUpdate(id, {...data}, {new: true})
+		console.log("Stripe Customer", stripeCustomerId)
+		// update stripe info
+		const customer = await stripe.customers.update(
+			stripeCustomerId,
+			{
+				email,
+				name: `${firstname} ${lastname}`,
+				phone
+			}
+		);
+		console.log(customer)
 		return res.status(200).json({
 			firstname,
 			lastname,
@@ -209,6 +219,10 @@ const updateProfile = async (req, res, next) => {
 			message: "Profile updated successfully!"
 		})
 	} catch (err) {
+		if (err.code === 11000) {
+			err.message = "Sorry, that email is taken!";
+		}
+		console.error(err);
 		return next({
 			status: 400,
 			message: err.message
@@ -230,8 +244,8 @@ const uploadProfileImage = async (req, res, next) => {
 			"profileImage.location": location
 		}, {new: true})
 		console.log(profileImage)
+		// retrieve image object from s3 convert to base64
 		let base64Image = await getBase64Image(filename)
-		//let img = fs.readFileSync(location, {encoding: 'base64'})
 		return res.status(200).json({
 			base64Image,
 			message: "image uploaded!"
