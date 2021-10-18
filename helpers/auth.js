@@ -26,7 +26,7 @@ const login = async (req, res, next) => {
 			selectionStrategy,
 			shopify,
 			paymentMethodId,
-			profileImage: {data: profileImageData},
+			profileImage: {file},
 			stripeCustomerId,
 			subscriptionId
 		} = user;
@@ -40,6 +40,11 @@ const login = async (req, res, next) => {
 				},
 				process.env.SECRET_KEY
 			);
+			let img
+			if (file) {
+				let imagePath = `./uploads/${file}`
+				img = fs.readFileSync(imagePath, {encoding: 'base64'})
+			}
 			return res.status(200).json({
 				id: _id,
 				firstname,
@@ -49,7 +54,7 @@ const login = async (req, res, next) => {
 				createdAt,
 				phone,
 				address,
-				profileImageData,
+				profileImageData: img,
 				shopify: shopify.accessToken,
 				token,
 				apiKey,
@@ -210,8 +215,7 @@ const uploadProfileImage = async (req, res, next) => {
 			let img = fs.readFileSync(imagePath, {encoding: 'base64'})
 			//update the profile image in user db
 			const {profileImage} = await db.User.findByIdAndUpdate(id, {
-				"profileImage.file": filename,
-				"profileImage.data": img
+				"profileImage.file": filename
 			}, {new: true})
 			console.log(profileImage)
 			return res.status(200).json({

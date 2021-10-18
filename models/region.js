@@ -8,6 +8,4 @@ const regionSchema = new mongoose.Schema({
 	}
 });
 
-const PostCode = mongoose.model("Postcode", regionSchema);
-
-module.exports = PostCode;
+module.exports = regionSchema;

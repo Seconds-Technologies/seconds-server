@@ -5,6 +5,7 @@ moment.tz.setDefault("Europe/London");
 const logger = require('morgan');
 const cors = require("cors");
 const bodyParser = require('body-parser');
+const db = require('./models/index');
 const errorHandler = require('./helpers/error');
 const authRoutes = require('./routes/auth');
 const shopifyRoutes = require('./routes/shopify');
@@ -14,7 +15,6 @@ const { authorizeUser, authenticateUser } = require('./middleware/auth');
 const app = express();
 app.use(logger("dev"))
 
-const db = require('./models/index');
 const PORT = process.env.PORT || 8081;
 
 app.use(cors())
