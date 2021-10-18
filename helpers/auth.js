@@ -109,7 +109,7 @@ const register = async (req, res, next) => {
 		// console.log(req.body.stripeCustomerId);
 		let user = await db.User.create(req.file ? {
 			...req.body,
-			"profileImage.file": req.file.path,
+			"profileImage.filename": req.file.path,
 			"stripeCustomerId": customer.id
 		} : {...req.body, "stripeCustomerId": customer.id});
 		let {
@@ -126,7 +126,6 @@ const register = async (req, res, next) => {
 			selectionStrategy,
 			subscriptionId,
 			shopify,
-			profileImage: {data: profileImageData},
 			stripeCustomerId
 		} = user;
 		//create a jwt token
@@ -145,7 +144,7 @@ const register = async (req, res, next) => {
 			email,
 			createdAt,
 			company,
-			profileImageData,
+			profileImageData: "",
 			shopify: shopify.accessToken,
 			apiKey,
 			phone,
