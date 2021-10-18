@@ -32,7 +32,11 @@ const userSchema = new mongoose.Schema({
 		required: true
 	},
 	profileImage: {
-		file: {
+		filename: {
+			type: String,
+			default: ""
+		},
+		location: {
 			type: String,
 			default: ""
 		}
