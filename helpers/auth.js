@@ -5,7 +5,25 @@ const fs = require("fs");
 const crypto = require("crypto");
 const {nanoid} = require('nanoid')
 const shorthash = require("shorthash");
+const {S3} = require('../constants/index');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+
+function encode(data){
+	let buf = Buffer.from(data);
+	return buf.toString('base64');
+}
+
+async function getBase64Image(filename){
+	if (filename) {
+		const data = await S3.getObject({
+			Bucket: 'seconds-profile-pictures',
+			Key: filename
+		}).promise();
+		console.log(data);
+		return encode(data.Body)
+	}
+	return ""
+}
 
 const login = async (req, res, next) => {
 	console.log(req.body)
@@ -26,7 +44,7 @@ const login = async (req, res, next) => {
 			selectionStrategy,
 			shopify,
 			paymentMethodId,
-			profileImage: {file},
+			profileImage: {filename},
 			stripeCustomerId,
 			subscriptionId
 		} = user;
@@ -40,11 +58,8 @@ const login = async (req, res, next) => {
 				},
 				process.env.SECRET_KEY
 			);
-			let img
-			if (file) {
-				let imagePath = `./uploads/${file}`
-				img = fs.readFileSync(imagePath, {encoding: 'base64'})
-			}
+			let img = ""
+			if (filename) img = await getBase64Image(filename)
 			return res.status(200).json({
 				id: _id,
 				firstname,
@@ -203,29 +218,24 @@ const updateProfile = async (req, res, next) => {
 }
 
 const uploadProfileImage = async (req, res, next) => {
-	let file = req.file;
-	let {id} = req.body;
 	try {
-		if (Object.keys(file).length) {
-			const path = req.file.path;
-			console.log(path)
-			const filename = `${shorthash.unique(file.originalname)}.jpg`
-			console.log("Image File:", filename)
-			let imagePath = `./uploads/${filename}`
-			let img = fs.readFileSync(imagePath, {encoding: 'base64'})
-			//update the profile image in user db
-			const {profileImage} = await db.User.findByIdAndUpdate(id, {
-				"profileImage.file": filename
-			}, {new: true})
-			console.log(profileImage)
-			return res.status(200).json({
-				base64Image: img,
-				message: "image uploaded!"
-			})
-		}
-		return next({
-			status: 404,
-			message: "No profile image uploaded!"
+		const {id} = req.body;
+		const file = req.file;
+		console.log(file)
+		const location = req.file.location;
+		const filename = `${shorthash.unique(file.originalname)}.jpg`
+		console.log("Image File:", filename)
+		//update the profile image in user db
+		const {profileImage} = await db.User.findByIdAndUpdate(id, {
+			"profileImage.filename": filename,
+			"profileImage.location": location
+		}, {new: true})
+		console.log(profileImage)
+		let base64Image = await getBase64Image(filename)
+		//let img = fs.readFileSync(location, {encoding: 'base64'})
+		return res.status(200).json({
+			base64Image,
+			message: "image uploaded!"
 		})
 	} catch (err) {
 		return next({
