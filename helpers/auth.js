@@ -198,8 +198,8 @@ const generateSecurityKeys = async (req, res, next) => {
 
 const updateProfile = async (req, res, next) => {
 	try {
-		const {id, ...params} = req.body;
-		const {firstname, lastname, email, company} = await db.User.findByIdAndUpdate(id, {...params}, {new: true})
+		const {id, ...data} = req.body;
+		const {firstname, lastname, email, company} = await db.User.findByIdAndUpdate(id, {...data}, {new: true})
 		console.log("User", {id, firstname, lastname, email, company})
 		return res.status(200).json({
 			firstname,
