@@ -35,10 +35,6 @@ const userSchema = new mongoose.Schema({
 		file: {
 			type: String,
 			default: ""
-		},
-		data: {
-			type: String,
-			default: ""
 		}
 	},
 	shopify: {
@@ -99,6 +95,4 @@ userSchema.methods.comparePassword = async function (candidatePassword, next) {
 	}
 };
 
-const User = mongoose.model("User", userSchema);
-
-module.exports = User;
+module.exports = userSchema;
