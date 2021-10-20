@@ -19,31 +19,66 @@ const userSchema = new mongoose.Schema({
 		type: String,
 		required: true
 	},
+	phone:{
+		type: String,
+		required: true
+	},
+	address: {
+		type: String,
+		required: true
+	},
 	password: {
 		type: String,
 		required: true
 	},
-	profileImageURL: {
-		type: String,
-		default: ""
+	profileImage: {
+		filename: {
+			type: String,
+			default: ""
+		},
+		location: {
+			type: String,
+			default: ""
+		}
 	},
-	shopDetails: {
+	shopify: {
 		orders: [],
 		products: [],
 		shopId: String,
 		shopOwner: String,
-        country: String,
-        domain: String,
+		country: String,
+		domain: String,
 		baseURL: String,
 		accessToken: String
 	},
 	createdAt: {
 		type: Date,
 		default: Date.now()
-	}
+	},
+	apiKey: {
+		type: String,
+		default: ""
+	},
+	selectionStrategy: {
+		type: String,
+		default: "eta"
+	},
+	stripeCustomerId: {
+		type: String,
+		default: "",
+	},
+	paymentMethodId: {
+		type: String,
+		default: "",
+	},
+	subscriptionId: {
+		type: String,
+		default: ""
+	},
+	jobs: []
 });
 
-userSchema.pre("save", async function(next) {
+userSchema.pre("save", async function (next) {
 	try {
 		if (!this.isModified("password")) {
 			return next();
@@ -55,7 +90,7 @@ userSchema.pre("save", async function(next) {
 	}
 });
 
-userSchema.methods.comparePassword = async function(candidatePassword, next) {
+userSchema.methods.comparePassword = async function (candidatePassword, next) {
 	try {
 		return await bcrypt.compare(candidatePassword, this.password);
 	} catch (err) {
@@ -64,6 +99,4 @@ userSchema.methods.comparePassword = async function(candidatePassword, next) {
 	}
 };
 
-const User = mongoose.model("User", userSchema);
-
-module.exports = User;
+module.exports = userSchema;
