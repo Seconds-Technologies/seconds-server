@@ -19,12 +19,12 @@ exports.validateShopify = async (req, res, next) => {
 			},
 		} = await axios.get(URL);
 		//check if a user has an account integrated with this shopify account already
-		const users = await db.User.find({"shopDetails.shopId": id})
+		const users = await db.User.find({"shopify.shopId": id})
 		console.log("Duplicate shopify users", users.length)
 		if (!users.length) {
 			await db.User.findOneAndUpdate(
 				{ email },
-				{ shopDetails: { baseURL, accessToken: password, shopId: id, domain, country, shopOwner: shop_owner } },
+				{ shopify: { baseURL, accessToken: password, shopId: id, domain, country, shopOwner: shop_owner } },
 				{ new: true }
 			);		// append the shop id to user mongo
 			return res.status(200).json({
@@ -51,11 +51,10 @@ exports.getShopifyDetails = async (req, res, next) => {
 	try {
 		console.log(req.body);
 		let { email } = req.body;
-		let { shopDetails } = await db.User.findOne({ email });
-		console.log(shopDetails);
-		if (shopDetails.accessToken || shopDetails.shopId) {
+		let { shopify } = await db.User.findOne({ email });
+		if (shopify.accessToken || shopify.shopId) {
 			res.status(200).json({
-				...shopDetails,
+				...shopify,
 			});
 		} else {
 			throw new Error("This user has no shopify account integrated");
@@ -98,7 +97,7 @@ exports.getShopifyOrders = async (req, res, next) => {
 	try {
 		const { baseURL, token, email, createdAt } = req.body;
 		let date = moment(createdAt).startOf("hour").toISOString();
-		let dataEdt = moment(date).tz("America/New_York").format();
+		let dataEdt = moment(date).subtract(3, "years").tz("America/New_York").format();
 		console.log(dataEdt);
 		const url = baseURL + `/orders.json?created_at_min=${dataEdt}&status=any`;
 		console.log(url, token, email);
@@ -110,16 +109,16 @@ exports.getShopifyOrders = async (req, res, next) => {
 			},
 		});
 		console.log("Number of orders:", shopifyOrders.length);
-		const postcodes = (await db.PostCode.find()).map(item => item.Postcode);
+		const postcodes = (await db.PostCode.find()).map(item => item['Postcode']);
 		let filteredOrders = filterOrders(shopifyOrders, postcodes);
 		const {
-			shopDetails: { orders: dbOrders },
-		} = await db.User.findOne({ email }, "shopDetails.orders");
+			shopify: { orders: dbOrders },
+		} = await db.User.findOne({ email }, "shopify.orders");
 		// check if there are any orders in the database
 		// compare shopify orders with orders in db
 		// if order ids match, update order status with order status stored in db
 		let finalOrders = dbOrders.length > 0 ? updateStatuses(filteredOrders, dbOrders) : filteredOrders
-		await db.User.findOneAndUpdate({ email }, { "shopDetails.orders": finalOrders }, { new: true });
+		await db.User.findOneAndUpdate({ email }, { "shopify.orders": finalOrders }, { new: true });
 		res.status(200).json({
 			postcodes,
 			orders: finalOrders,
@@ -146,7 +145,7 @@ exports.getShopifyProducts = async (req, res, next) => {
 				"X-Shopify-Access-Token": token,
 			},
 		});
-		await db.User.findOneAndUpdate({ email }, { "shopDetails.products": products }, { new: true });
+		await db.User.findOneAndUpdate({ email }, { "shopify.products": products }, { new: true });
 		res.status(200).json({
 			products,
 		});
@@ -188,8 +187,8 @@ exports.fetchOrders = async (req, res, next) => {
 	try {
 		const { email } = req.body;
 		const {
-			shopDetails: { orders },
-		} = await db.User.findOne({ email }, "shopDetails.orders");
+			shopify: { orders },
+		} = await db.User.findOne({ email }, "shopify.orders");
 		res.status(200).json({
 			orders,
 		});
@@ -206,8 +205,8 @@ exports.fetchProducts = async (req, res, next) => {
 	try {
 		const { email } = req.body;
 		const {
-			shopDetails: { products },
-		} = await db.User.findOne({ email }, "shopDetails.products");
+			shopify: { products },
+		} = await db.User.findOne({ email }, "shopify.products");
 		res.status(200).json({
 			products,
 		});
@@ -225,10 +224,10 @@ exports.updateOrder = async (req, res, next) => {
 		const { id, email, status } = req.body;
 		console.log(req.body);
 		const {
-			shopDetails: { orders },
-		} = await db.User.findOne({ email }, "shopDetails.orders");
+			shopify: { orders },
+		} = await db.User.findOne({ email }, "shopify.orders");
 		const updatedOrders = updateOrders(orders, id, status);
-		await db.User.findOneAndUpdate({ email }, { "shopDetails.orders": updatedOrders }, { new: true });
+		await db.User.findOneAndUpdate({ email }, { "shopify.orders": updatedOrders }, { new: true });
 		res.status(200).json({
 			message: `Order ${id} has been updated!`,
 			updatedOrders,
@@ -247,10 +246,10 @@ exports.updateProduct = async (req, res, next) => {
 		const { productId, email, ...keys } = req.body;
 		console.log(req.body);
 		const {
-			shopDetails: { products },
-		} = await db.User.findOne({ email }, "shopDetails.products");
+			shopify: { products },
+		} = await db.User.findOne({ email }, "shopify.products");
 		const updatedProducts = filterAndUpdateProducts(products, productId, keys);
-		await db.User.findOneAndUpdate({ email }, { "shopDetails.products": updatedProducts }, { new: true });
+		await db.User.findOneAndUpdate({ email }, { "shopify.products": updatedProducts }, { new: true });
 		res.status(200).json({
 			message: `Product ${productId} has been updated!`,
 			updatedProducts,
@@ -269,10 +268,10 @@ exports.removeProduct = async (req, res, next) => {
 		const { email, id } = req.body;
 		console.log(req.body);
 		const {
-			shopDetails: { products },
-		} = await db.User.findOne({ email }, "shopDetails.products");
+			shopify: { products },
+		} = await db.User.findOne({ email }, "shopify.products");
 		let updatedProducts = filterAndRemove(products, id);
-		await db.User.findOneAndUpdate({ email }, { "shopDetails.products": updatedProducts }, { new: true });
+		await db.User.findOneAndUpdate({ email }, { "shopify.products": updatedProducts }, { new: true });
 		res.status(200).json({
 			message: `Product ${id} has been removed from the store!`,
 			updatedProducts,
