@@ -1,5 +1,7 @@
 const mongoose = require("mongoose");
+const crypto = require("crypto");
 const bcrypt = require("bcrypt");
+const moment = require("moment");
 
 const userSchema = new mongoose.Schema({
 	email: {
@@ -30,6 +32,12 @@ const userSchema = new mongoose.Schema({
 	password: {
 		type: String,
 		required: true
+	},
+	passwordResetToken: {
+		type: String
+	},
+	passwordResetExpires: {
+		type: Date
 	},
 	profileImage: {
 		filename: {
@@ -98,5 +106,15 @@ userSchema.methods.comparePassword = async function (candidatePassword, next) {
 		return next(err);
 	}
 };
+
+userSchema.methods.createPasswordResetToken = function(){
+	const resetToken = crypto.randomBytes(32).toString('hex');
+	this.passwordResetToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+
+	console.log({resetToken}, this.passwordResetToken)
+
+	this.passwordResetExpires = moment().add(1, "day").utc(true)
+	return resetToken;
+}
 
 module.exports = userSchema;

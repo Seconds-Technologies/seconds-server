@@ -4,7 +4,7 @@ const express = require("express");
 
 const authenticateUser = async (req, res, next) => {
     try {
-        console.log(req.body)
+        console.log(req.headers)
         const token = req.headers.authorization.split(" ")[1]
         console.log(token)
         jwt.verify(token, process.env.SECRET_KEY, function(err, decoded) {
@@ -24,6 +24,7 @@ const authenticateUser = async (req, res, next) => {
 
 const authorizeUser = async (req, res, next) => {
     try {
+        console.log(req.headers)
         const token = req.headers.authorization.split(" ")[1]
         jwt.verify(token, process.env.SECRET_KEY, function (err, decoded) {
             return (decoded && decoded["_id"] === req.params["userId"] ? next() : next({
