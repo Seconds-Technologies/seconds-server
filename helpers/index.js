@@ -1,3 +1,22 @@
+const { S3 } = require('../constants/index');
+
+function encode(data) {
+	let buf = Buffer.from(data);
+	return buf.toString('base64');
+}
+
+async function getBase64Image(filename) {
+	if (filename) {
+		const data = await S3.getObject({
+			Bucket: 'seconds-profile-pictures',
+			Key: filename,
+		}).promise();
+		console.log(data);
+		return encode(data.Body);
+	}
+	return '';
+}
+
 function filterOrders(orders, postcodes){
 	const filtered = orders.filter((item => {
 		let postcode = item["shipping_address"]["zip"]
@@ -55,6 +74,7 @@ function updateStock(product, quantity) {
 }
 
 module.exports = {
+	getBase64Image,
 	filterOrders,
 	updateOrders,
 	filterAndRemove,
