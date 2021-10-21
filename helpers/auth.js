@@ -175,7 +175,7 @@ const sendPasswordResetEmail = async (req, res) => {
 		await user.save({ validateBeforeSave: false });
 		console.log(user);
 		// send it to the user
-		const resetURL = `${req.protocol}://${process.env.CLIENT_HOST}/reset?token=${resetToken}`;
+		const resetURL = `${process.env.CLIENT_HOST}/reset?token=${resetToken}`;
 		console.log(resetURL);
 		const message = `Forgot your password? Submit a PATCH request with your new password to: \n\n${resetURL}.
 		\nIf you didn't forget your password, please ignore this email!`;
