@@ -10,7 +10,7 @@ const errorHandler = require('./helpers/error');
 const authRoutes = require('./routes/auth');
 const mainRoutes = require('./routes/main');
 const shopifyRoutes = require('./routes/shopify');
-const { authorizeUser, authenticateUser } = require('./middleware/auth');
+const { authenticateUser } = require('./middleware/auth');
 
 const app = express();
 app.use(logger("dev"))
@@ -26,9 +26,9 @@ app.get('/server', (req, res) => {
     })
 })
 app.use('/uploads', express.static('uploads'));
-app.use('/server/main', authenticateUser, authorizeUser, mainRoutes); //TODO - Correct path for redux thunks in client-end
 app.use('/server/auth', authRoutes);
-app.use('/server/shopify', authenticateUser, authorizeUser, shopifyRoutes);
+app.use('/server/main', authenticateUser, mainRoutes); //TODO - Correct path for redux thunks in client-end
+app.use('/server/shopify', authenticateUser, shopifyRoutes);
 
 //TODO - move middleware above server routes and test
 
