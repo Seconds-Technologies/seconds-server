@@ -10,6 +10,9 @@ const errorHandler = require('./helpers/error');
 const authRoutes = require('./routes/auth');
 const mainRoutes = require('./routes/main');
 const shopifyRoutes = require('./routes/shopify');
+const paymentRoutes = require('./routes/payments');
+const stripeRoutes = require('./routes/stripe');
+const subscriptionRoutes = require('./routes/subscriptions')
 const { authenticateUser } = require('./middleware/auth');
 
 const app = express();
@@ -18,7 +21,12 @@ app.use(logger("dev"))
 const PORT = process.env.PORT || 8081;
 
 app.use(cors())
+
+//STRIPE WEBHOOKS
+app.use('/server/stripe', stripeRoutes)
+
 app.use(bodyParser.json())
+app.use(bodyParser.urlencoded({extended: true}));
 
 app.get('/server', (req, res) => {
     res.status(200).json({
@@ -29,6 +37,8 @@ app.use('/uploads', express.static('uploads'));
 app.use('/server/auth', authRoutes);
 app.use('/server/main', authenticateUser, mainRoutes); //TODO - Correct path for redux thunks in client-end
 app.use('/server/shopify', authenticateUser, shopifyRoutes);
+app.use('/server/payment', authenticateUser, paymentRoutes);
+app.use('/server/subscription', subscriptionRoutes);
 
 //TODO - move middleware above server routes and test
 
@@ -43,5 +53,5 @@ app.use(errorHandler)
 
 app.listen(PORT, () => {
     console.log(`Server is listening on port ${PORT}...`)
-    console.log("production DB:", process.env.MONGODB_URI)
+    console.log("Database:", process.env.MONGODB_URI)
 });
