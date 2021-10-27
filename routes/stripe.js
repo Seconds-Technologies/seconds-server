@@ -5,10 +5,6 @@ const bodyParser = require('body-parser');
 const router = express.Router();
 
 router.post('/webhook', bodyParser.raw({ type: 'application/json' }), (request, response) => {
-	console.log("-----------------------------------------")
-	console.log("WEBHOOK EVENET")
-	console.log(request.rawBody);
-	console.log("-----------------------------------------")
 	let event = request.rawBody;
 	// Replace this endpoint secret with your endpoint's unique secret
 	// If you are testing with the CLI, find the secret by running 'stripe listen'
@@ -30,9 +26,10 @@ router.post('/webhook', bodyParser.raw({ type: 'application/json' }), (request, 
 	}
 	let subscription;
 	let status;
-	/*console.log('=====================================');
+	console.log('=====================================');
 	console.log(event);
-	console.log('=====================================');*/
+	console.log(JSON.parse(event))
+	console.log('=====================================');
 	// Handle the event
 	switch (event.type) {
 		case 'customer.subscription.trial_will_end':
