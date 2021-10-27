@@ -1,7 +1,7 @@
-const mongoose = require("mongoose");
-const crypto = require("crypto");
-const bcrypt = require("bcrypt");
-const moment = require("moment");
+const mongoose = require('mongoose');
+const crypto = require('crypto');
+const bcrypt = require('bcrypt');
+const moment = require('moment');
 
 const userSchema = new mongoose.Schema({
 	email: {
@@ -21,13 +21,31 @@ const userSchema = new mongoose.Schema({
 		type: String,
 		required: true
 	},
-	phone:{
+	phone: {
+		type: String,
+		required: true
+	},
+	fullAddress: {
 		type: String,
 		required: true
 	},
 	address: {
-		type: String,
-		required: true
+		street: {
+			type: String,
+			default: ''
+		},
+		city: {
+			type: String,
+			default: ''
+		},
+		postcode: {
+			type: String,
+			default: ''
+		},
+		countryCode: {
+			type: String,
+			default: 'GB'
+		}
 	},
 	password: {
 		type: String,
@@ -42,15 +60,14 @@ const userSchema = new mongoose.Schema({
 	profileImage: {
 		filename: {
 			type: String,
-			default: ""
+			default: ''
 		},
 		location: {
 			type: String,
-			default: ""
+			default: ''
 		}
 	},
 	shopify: {
-		orders: [],
 		products: [],
 		shopId: String,
 		shopOwner: String,
@@ -65,30 +82,30 @@ const userSchema = new mongoose.Schema({
 	},
 	apiKey: {
 		type: String,
-		default: ""
+		default: ''
 	},
 	selectionStrategy: {
 		type: String,
-		default: "eta"
+		default: 'eta'
 	},
 	stripeCustomerId: {
 		type: String,
-		default: "",
+		default: ''
 	},
 	paymentMethodId: {
 		type: String,
-		default: "",
+		default: ''
 	},
 	subscriptionId: {
 		type: String,
-		default: ""
+		default: ''
 	},
 	jobs: []
 });
 
-userSchema.pre("save", async function (next) {
+userSchema.pre('save', async function (next) {
 	try {
-		if (!this.isModified("password")) {
+		if (!this.isModified('password')) {
 			return next();
 		}
 		this.password = await bcrypt.hash(this.password, 10);
@@ -107,14 +124,14 @@ userSchema.methods.comparePassword = async function (candidatePassword, next) {
 	}
 };
 
-userSchema.methods.createPasswordResetToken = function(){
+userSchema.methods.createPasswordResetToken = function () {
 	const resetToken = crypto.randomBytes(32).toString('hex');
 	this.passwordResetToken = crypto.createHash('sha256').update(resetToken).digest('hex');
 
-	console.log({resetToken}, this.passwordResetToken)
+	console.log({ resetToken }, this.passwordResetToken);
 
-	this.passwordResetExpires = moment().add(1, "day").utc(true)
+	this.passwordResetExpires = moment().add(1, 'day').utc(true);
 	return resetToken;
-}
+};
 
 module.exports = userSchema;

@@ -9,8 +9,8 @@ exports.validateShopify = async (req, res, next) => {
 	try {
 		console.log(req.body);
 		const { email, shopName, apiKey, password } = req.body;
-		const baseURL = `https://${shopName}.myshopify.com/admin/api/2021-04`;
-		const URL = `https://${apiKey}:${password}@${shopName}.myshopify.com/admin/api/2021-04/shop.json`;
+		const baseURL = `https://${shopName}.myshopify.com/admin/api/2021-10`;
+		const URL = `https://${apiKey}:${password}@${shopName}.myshopify.com/admin/api/2021-10/shop.json`;
 		//const buff = Buffer.from(`${apiKey}:${password}`, 'utf-8');
 		// const authToken = String("Basic " + buff.toString('base64'));
 		const {
@@ -93,14 +93,14 @@ exports.getOrderCount = async (req, res, next) => {
 	}
 };
 
-exports.getShopifyOrders = async (req, res, next) => {
+/*exports.getShopifyOrders = async (req, res, next) => {
 	try {
 		const { baseURL, token, email, createdAt } = req.body;
 		let date = moment(createdAt).startOf("hour").toISOString();
-		let dataEdt = moment(date).subtract(3, "years").tz("America/New_York").format();
+		let dataEdt = moment(date).subtract(3, "years").toISOString();
 		console.log(dataEdt);
 		const url = baseURL + `/orders.json?created_at_min=${dataEdt}&status=any`;
-		console.log(url, token, email);
+		console.table({url, token, email});
 		const {
 			data: { orders: shopifyOrders },
 		} = await axios.get(url, {
@@ -130,7 +130,7 @@ exports.getShopifyOrders = async (req, res, next) => {
 			message: "Unable to get shop orders!",
 		});
 	}
-};
+};*/
 
 exports.getShopifyProducts = async (req, res, next) => {
 	try {
@@ -183,7 +183,7 @@ exports.getProductImage = async (req, res, next) => {
 	}
 };
 
-exports.fetchOrders = async (req, res, next) => {
+/*exports.fetchOrders = async (req, res, next) => {
 	try {
 		const { email } = req.body;
 		const {
@@ -199,7 +199,7 @@ exports.fetchOrders = async (req, res, next) => {
 			message: "Unable to fetch orders from DB!",
 		});
 	}
-};
+};*/
 
 exports.fetchProducts = async (req, res, next) => {
 	try {

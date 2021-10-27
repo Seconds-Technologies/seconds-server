@@ -1,9 +1,7 @@
 const db = require('../models/index');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
-const { nanoid } = require('nanoid');
 const shorthash = require('shorthash');
-const { S3 } = require('../constants/index');
 const sendEmail = require('../services/email');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const { getBase64Image } = require('../helpers')
@@ -20,7 +18,7 @@ const login = async (req, res, next) => {
 			lastname,
 			email,
 			phone,
-			address,
+			fullAddress,
 			company,
 			createdAt,
 			apiKey,
@@ -52,7 +50,7 @@ const login = async (req, res, next) => {
 				company,
 				createdAt,
 				phone,
-				address,
+				fullAddress,
 				profileImageData: img,
 				shopify: shopify.accessToken,
 				token,
@@ -108,7 +106,7 @@ const register = async (req, res, next) => {
 			email,
 			company,
 			phone,
-			address,
+			fullAddress,
 			createdAt,
 			apiKey,
 			paymentMethodId,
@@ -138,7 +136,7 @@ const register = async (req, res, next) => {
 			shopify: shopify.accessToken,
 			apiKey,
 			phone,
-			address,
+			fullAddress,
 			selectionStrategy,
 			token,
 			stripeCustomerId,
