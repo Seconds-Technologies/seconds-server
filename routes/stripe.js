@@ -5,7 +5,11 @@ const bodyParser = require('body-parser');
 const router = express.Router();
 
 router.post('/webhook', bodyParser.raw({ type: 'application/json' }), (request, response) => {
-	let event = request.body;
+	console.log("-----------------------------------------")
+	console.log("WEBHOOK EVENET")
+	console.log(request.rawBody);
+	console.log("-----------------------------------------")
+	let event = request.rawBody;
 	// Replace this endpoint secret with your endpoint's unique secret
 	// If you are testing with the CLI, find the secret by running 'stripe listen'
 	// If you are using an endpoint defined with the API or dashboard, look in your webhook settings
@@ -13,12 +17,11 @@ router.post('/webhook', bodyParser.raw({ type: 'application/json' }), (request, 
 	const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
 	// Only verify the event if you have an endpoint secret defined.
 	// Otherwise use the basic event deserialized with JSON.parse
-	console.log(endpointSecret);
 	if (endpointSecret) {
 		// Get the signature sent by Stripe
 		const signature = request.headers['stripe-signature'];
 		try {
-			event = stripe.webhooks.constructEvent(request.body, signature, endpointSecret);
+			event = stripe.webhooks.constructEvent(request.rawBody, signature, endpointSecret);
 			console.log('✅  Success Webhook verified!');
 		} catch (err) {
 			console.log(`⚠  Webhook signature verification failed.`, err.message);
@@ -27,9 +30,9 @@ router.post('/webhook', bodyParser.raw({ type: 'application/json' }), (request, 
 	}
 	let subscription;
 	let status;
-	console.log('=====================================');
+	/*console.log('=====================================');
 	console.log(event);
-	console.log('=====================================');
+	console.log('=====================================');*/
 	// Handle the event
 	switch (event.type) {
 		case 'customer.subscription.trial_will_end':
