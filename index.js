@@ -32,6 +32,10 @@ app.use(
 		},
 	})
 );
+
+//STRIPE WEBHOOKS
+app.use('/server/stripe', stripeRoutes);
+
 app.use(bodyParser.urlencoded({ extended: true }));
 
 app.get('/server', (req, res) => {
@@ -45,8 +49,6 @@ app.use('/server/main', authenticateUser, mainRoutes); //TODO - Correct path for
 app.use('/server/shopify', authenticateUser, shopifyRoutes);
 app.use('/server/payment', authenticateUser, paymentRoutes);
 app.use('/server/subscription', subscriptionRoutes);
-//STRIPE WEBHOOKS
-app.use('/server/stripe', stripeRoutes);
 
 //TODO - move middleware above server routes and test
 
