@@ -12,6 +12,7 @@ router.post('/webhook', express.raw({type: 'application/json'}), (request, respo
 	const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET
 	// Only verify the event if you have an endpoint secret defined.
 	// Otherwise use the basic event deserialized with JSON.parse
+	console.log(endpointSecret)
 	if (endpointSecret) {
 		// Get the signature sent by Stripe
 		const signature = request.headers['stripe-signature'];
@@ -29,6 +30,9 @@ router.post('/webhook', express.raw({type: 'application/json'}), (request, respo
 	}
 	let subscription;
 	let status;
+	console.log("=====================================")
+	console.log(event)
+	console.log("=====================================")
 	// Handle the event
 	switch (event.type) {
 		case 'customer.subscription.trial_will_end':
