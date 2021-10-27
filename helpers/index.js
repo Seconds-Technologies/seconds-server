@@ -23,7 +23,7 @@ function filterOrders(orders, postcodes){
 		let postcode = item["shipping_address"]["zip"]
 		//console.log(postcode, postcode.replace(/\s/g, ""));
 		return postcodes.some(prefix => postcode.startsWith(prefix) || postcode.replace(/\s/g, "").startsWith(prefix))
-	})).map(item => ({ ...item, status: "Unpacked" }))
+	})).map(item => ({ ...item, status: "NEW" }))
 	console.log("Num filtered orders: ", filtered.length);
 	return filtered
 }

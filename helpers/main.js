@@ -1,8 +1,6 @@
 const db = require('../models/index');
 const crypto = require('crypto');
-const { nanoid } = require('nanoid');
 const shorthash = require('shorthash');
-const { S3 } = require('../constants/index');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const { getBase64Image } = require('../helpers')
 
@@ -37,7 +35,7 @@ const updateProfile = async (req, res, next) => {
 	try {
 		const { id, data } = req.body;
 		// update user info in database
-		const { firstname, lastname, email, company, stripeCustomerId, phone } = await db.User.findByIdAndUpdate(
+		const { firstname, lastname, email, company, stripeCustomerId, phone, fullAddress } = await db.User.findByIdAndUpdate(
 			id,
 			{ ...data },
 			{ new: true }
@@ -48,6 +46,7 @@ const updateProfile = async (req, res, next) => {
 			email,
 			name: `${firstname} ${lastname}`,
 			phone,
+			description: company
 		});
 		console.log(customer);
 		return res.status(200).json({
@@ -55,6 +54,8 @@ const updateProfile = async (req, res, next) => {
 			lastname,
 			email,
 			company,
+			phone,
+			fullAddress,
 			message: 'Profile updated successfully!',
 		});
 	} catch (err) {
