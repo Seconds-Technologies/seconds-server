@@ -5,7 +5,7 @@ const bodyParser = require('body-parser');
 const router = express.Router();
 
 router.post('/webhook', bodyParser.raw({ type: 'application/json' }), (request, response) => {
-	let event = request.rawBody;
+	let event = JSON.parse(request.rawBody);
 	// Replace this endpoint secret with your endpoint's unique secret
 	// If you are testing with the CLI, find the secret by running 'stripe listen'
 	// If you are using an endpoint defined with the API or dashboard, look in your webhook settings
@@ -28,7 +28,6 @@ router.post('/webhook', bodyParser.raw({ type: 'application/json' }), (request, 
 	let status;
 	console.log('=====================================');
 	console.log(event);
-	console.log(JSON.parse(event))
 	console.log('=====================================');
 	// Handle the event
 	switch (event.type) {
