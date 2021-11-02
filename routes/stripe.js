@@ -47,10 +47,13 @@ router.post('/webhook', bodyParser.raw({ type: 'application/json' }), (request, 
 				.catch(err => console.error(err));
 			break;
 		case 'customer.subscription.created':
+			console.log('CUSTOMER_SUBSCRIPTION_CREATED');
 			subscription = event.data.object;
 			status = subscription.status;
 			console.log(`Subscription status is ${status}.`);
-			// Then define and call a method to handle the subscription created.
+			handleActiveSubscription(subscription)
+				.then(res => console.log(res))
+				.catch(err => console.error(err));
 			break;
 		case 'customer.subscription.updated':
 			console.log('CUSTOMER_SUBSCRIPTION_UPDATED');
