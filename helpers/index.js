@@ -77,11 +77,11 @@ function updateStock(product, quantity) {
 async function handleActiveSubscription(subscription) {
 	try {
 		console.log(subscription);
-		const { id, customer, status } = subscription;
+		const { id, customer, status, items: { data } } = subscription;
 		if (status === 'active') {
 			const user = await db.User.findOneAndUpdate(
 				{ stripeCustomerId: customer },
-				{ subscriptionId: id },
+				{ subscriptionId: id, subscriptionPlan: data[0].price.lookup_key },
 				{ new: true }
 			);
 			console.log('------------------------------------');
@@ -104,7 +104,7 @@ async function handleCanceledSubscription(subscription) {
 		if (status === 'canceled') {
 			const user = await db.User.findOneAndUpdate(
 				{ stripeCustomerId: customer },
-				{ subscriptionId: '' },
+				{ subscriptionId: '', subscriptionPlan: '' },
 				{ new: true }
 			);
 			console.log('------------------------------------');
