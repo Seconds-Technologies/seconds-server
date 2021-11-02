@@ -100,6 +100,10 @@ const userSchema = new mongoose.Schema({
 		type: String,
 		default: ''
 	},
+	subscriptionPlan: {
+		type: String,
+		default: ""
+	},
 	jobs: []
 });
 

@@ -28,6 +28,7 @@ const login = async (req, res, next) => {
 			profileImage: { filename },
 			stripeCustomerId,
 			subscriptionId,
+			subscriptionPlan
 		} = user;
 		let isMatch = await user.comparePassword(req.body.password);
 		if (isMatch) {
@@ -59,6 +60,7 @@ const login = async (req, res, next) => {
 				stripeCustomerId,
 				paymentMethodId,
 				subscriptionId,
+				subscriptionPlan,
 				message: 'You have logged in Successfully!',
 			});
 		} else {
@@ -114,6 +116,7 @@ const register = async (req, res, next) => {
 			subscriptionId,
 			shopify,
 			stripeCustomerId,
+			subscriptionPlan
 		} = user;
 		//create a jwt token
 		let token = jwt.sign(
@@ -142,6 +145,7 @@ const register = async (req, res, next) => {
 			stripeCustomerId,
 			paymentMethodId,
 			subscriptionId,
+			subscriptionPlan,
 			message: 'New user registered successfully!',
 		});
 	} catch (err) {
