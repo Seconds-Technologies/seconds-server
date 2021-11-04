@@ -26,9 +26,6 @@ router.post('/webhook', bodyParser.raw({ type: 'application/json' }), (request, 
 	}
 	let subscription;
 	let status;
-	console.log('=====================================');
-	console.log(event);
-	console.log('=====================================');
 	// Handle the event
 	switch (event.type) {
 		case 'customer.subscription.trial_will_end':
