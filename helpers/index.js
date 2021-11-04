@@ -84,16 +84,20 @@ async function handleActiveSubscription(subscription) {
 				{ subscriptionId: id, subscriptionPlan: data[0].price.lookup_key },
 				{ new: true }
 			);
-			console.log('------------------------------------');
-			console.log('updated user:', user);
-			console.log('------------------------------------');
-			return 'Subscription is active';
+			if (user) {
+				console.log('------------------------------------');
+				console.log('updated user:', user);
+				console.log('------------------------------------');
+				return 'Subscription is active';
+			} else {
+				throw new Error('No user found with a matching stripe customer ID!');
+			}
 		} else {
 			throw new Error('Subscription status is not active');
 		}
 	} catch (err) {
 		console.error(err);
-		throw new Error('No user found with a matching stripe customer ID!');
+		throw err
 	}
 }
 
