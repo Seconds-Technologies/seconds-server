@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 const crypto = require('crypto');
 const bcrypt = require('bcrypt');
 const moment = require('moment');
+const { deliveryHoursSchema, hoursSchema } = require('./deliveryHoursSchema');
 
 const userSchema = new mongoose.Schema({
 	email: {
@@ -76,10 +77,6 @@ const userSchema = new mongoose.Schema({
 		baseURL: String,
 		accessToken: String
 	},
-	createdAt: {
-		type: Date,
-		default: Date.now()
-	},
 	apiKey: {
 		type: String,
 		default: ''
@@ -103,6 +100,93 @@ const userSchema = new mongoose.Schema({
 	subscriptionPlan: {
 		type: String,
 		default: ""
+	},
+	deliveryHours: {
+		type: deliveryHoursSchema,
+		required: true,
+		default: {
+			1: {
+				open: {
+					h: 7,
+					m: 0
+				},
+				close: {
+					h: 18,
+					m: 0
+				},
+				canDeliver: true
+			},
+			2: {
+				open: {
+					h: 7,
+					m: 0
+				},
+				close: {
+					h: 18,
+					m: 0
+				},
+				canDeliver: true
+			},
+			3: {
+				open: {
+					h: 7,
+					m: 0
+				},
+				close: {
+					h: 18,
+					m: 0
+				},
+				canDeliver: true
+			},
+			4: {
+				open: {
+					h: 7,
+					m: 0
+				},
+				close: {
+					h: 18,
+					m: 0
+				},
+				canDeliver: true
+			},
+			5: {
+				open: {
+					h: 7,
+					m: 0
+				},
+				close: {
+					h: 18,
+					m: 0
+				},
+				canDeliver: true
+			},
+			6: {
+				open: {
+					h: 7,
+					m: 0
+				},
+				close: {
+					h: 18,
+					m: 0
+				},
+				canDeliver: true
+			},
+			0: {
+				open: {
+					h: 10,
+					m: 0
+				},
+				close: {
+					h: 16,
+					m: 0
+				},
+				canDeliver: true
+			}
+		}
+	},
+	createdAt: {
+		type: Date,
+		default: Date.now()
 	},
 	jobs: []
 });

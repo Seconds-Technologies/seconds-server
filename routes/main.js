@@ -21,11 +21,13 @@ const upload = (bucket) => multer({
 const {
 	generateSecurityKeys,
 	updateProfile,
+	updateDeliveryHours,
 	uploadProfileImage,
 } = require("../helpers/main")
 
 router.post("/token", generateSecurityKeys);
 router.post("/update", updateProfile)
+router.post('/delivery-hours', updateDeliveryHours);
 router.post("/upload", upload("seconds-profile-pictures").single('img'), uploadProfileImage)
 
 module.exports = router;

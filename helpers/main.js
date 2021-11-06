@@ -3,6 +3,7 @@ const crypto = require('crypto');
 const shorthash = require('shorthash');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const { getBase64Image } = require('../helpers')
+const moment = require('moment');
 
 const generateSecurityKeys = async (req, res, next) => {
 	// generate the apiKey using random byte sequences
@@ -102,8 +103,47 @@ const uploadProfileImage = async (req, res, next) => {
 	}
 };
 
+const updateDeliveryHours = async (req, res, next) => {
+	try {
+		const { email } = req.query;
+		const { day, canDeliver, openTime, closeTime } = req.body;
+		console.log(req.body);
+		let deliveryDay = `deliveryHours.${day}`;
+		const open = { h: moment(openTime).get('hour'), m: moment(openTime).get('minute') };
+		const close = { h: moment(closeTime).get('hour'), m: moment(closeTime).get('minute') };
+		console.log({ open, close, canDeliver });
+		const user = await db.User.findOneAndUpdate(
+			{ email },
+			{ [`${deliveryDay}`]: { open, close, canDeliver } },
+			{ new: true }
+			/*{
+				[`${deliveryDay}.open`]: open,
+				[`${deliveryDay}.close`]: close,
+				[`${deliveryDay}.canDeliver`]: canDeliver,
+			}*/
+		);
+		if (user) {
+			console.log(user.deliveryHours);
+			return res.status(200).json({
+				updatedHours: user.deliveryHours[day],
+				message: 'delivery hours updated',
+			});
+		} else {
+			return next({
+				status: 400,
+				message: 'No delivery hours detected!',
+			})
+		}
+	} catch (e) {
+		res.status(400).json({
+			message: e.message,
+		});
+	}
+}
+
 module.exports = {
 	generateSecurityKeys,
 	updateProfile,
+	updateDeliveryHours,
 	uploadProfileImage
 };
