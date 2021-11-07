@@ -2,7 +2,7 @@ const db = require('../models/index');
 const crypto = require('crypto');
 const shorthash = require('shorthash');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
-const { getBase64Image } = require('../helpers')
+const { getBase64Image } = require('../helpers');
 const moment = require('moment');
 
 const generateSecurityKeys = async (req, res, next) => {
@@ -22,12 +22,12 @@ const generateSecurityKeys = async (req, res, next) => {
 		await db.User.findOneAndUpdate({ email }, { apiKey: apiKey, selectionStrategy: strategy }, { new: true });
 		// return the new apiKey
 		return res.status(201).json({
-			apiKey,
+			apiKey
 		});
 	} catch (err) {
 		return next({
 			status: 400,
-			message: err.message,
+			message: err.message
 		});
 	}
 };
@@ -36,11 +36,8 @@ const updateProfile = async (req, res, next) => {
 	try {
 		const { id, data } = req.body;
 		// update user info in database
-		const { firstname, lastname, email, company, stripeCustomerId, phone, fullAddress } = await db.User.findByIdAndUpdate(
-			id,
-			{ ...data },
-			{ new: true }
-		);
+		const { firstname, lastname, email, company, stripeCustomerId, phone, fullAddress } =
+			await db.User.findByIdAndUpdate(id, { ...data }, { new: true });
 		console.log('Stripe Customer', stripeCustomerId);
 		// update stripe info
 		const customer = await stripe.customers.update(stripeCustomerId, {
@@ -57,7 +54,7 @@ const updateProfile = async (req, res, next) => {
 			company,
 			phone,
 			fullAddress,
-			message: 'Profile updated successfully!',
+			message: 'Profile updated successfully!'
 		});
 	} catch (err) {
 		if (err.code === 11000) {
@@ -66,7 +63,7 @@ const updateProfile = async (req, res, next) => {
 		console.error(err);
 		return next({
 			status: 400,
-			message: err.message,
+			message: err.message
 		});
 	}
 };
@@ -84,7 +81,7 @@ const uploadProfileImage = async (req, res, next) => {
 			id,
 			{
 				'profileImage.filename': filename,
-				'profileImage.location': location,
+				'profileImage.location': location
 			},
 			{ new: true }
 		);
@@ -93,12 +90,12 @@ const uploadProfileImage = async (req, res, next) => {
 		let base64Image = await getBase64Image(filename);
 		return res.status(200).json({
 			base64Image,
-			message: 'image uploaded!',
+			message: 'image uploaded!'
 		});
 	} catch (err) {
 		return next({
 			status: 400,
-			message: err.message,
+			message: err.message
 		});
 	}
 };
@@ -106,40 +103,31 @@ const uploadProfileImage = async (req, res, next) => {
 const updateDeliveryHours = async (req, res, next) => {
 	try {
 		const { email } = req.query;
-		const { day, canDeliver, openTime, closeTime } = req.body;
-		console.log(req.body);
-		let deliveryDay = `deliveryHours.${day}`;
-		const open = { h: moment(openTime).get('hour'), m: moment(openTime).get('minute') };
-		const close = { h: moment(closeTime).get('hour'), m: moment(closeTime).get('minute') };
-		console.log({ open, close, canDeliver });
+		console.table(req.body);
 		const user = await db.User.findOneAndUpdate(
 			{ email },
-			{ [`${deliveryDay}`]: { open, close, canDeliver } },
+			{ deliveryHours: req.body},
 			{ new: true }
-			/*{
-				[`${deliveryDay}.open`]: open,
-				[`${deliveryDay}.close`]: close,
-				[`${deliveryDay}.canDeliver`]: canDeliver,
-			}*/
 		);
 		if (user) {
-			console.log(user.deliveryHours);
+			console.log("Updated delivery hours")
+			console.table(user.deliveryHours);
 			return res.status(200).json({
-				updatedHours: user.deliveryHours[day],
-				message: 'delivery hours updated',
+				updatedHours: user.deliveryHours,
+				message: 'delivery hours updated'
 			});
 		} else {
 			return next({
 				status: 400,
-				message: 'No delivery hours detected!',
-			})
+				message: 'No delivery hours detected!'
+			});
 		}
 	} catch (e) {
 		res.status(400).json({
-			message: e.message,
+			message: e.message
 		});
 	}
-}
+};
 
 module.exports = {
 	generateSecurityKeys,
