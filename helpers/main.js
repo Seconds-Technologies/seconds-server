@@ -111,7 +111,6 @@ const updateDeliveryHours = async (req, res, next) => {
 		);
 		if (user) {
 			console.log("Updated delivery hours")
-			console.table(user.deliveryHours);
 			return res.status(200).json({
 				updatedHours: user.deliveryHours,
 				message: 'delivery hours updated'
