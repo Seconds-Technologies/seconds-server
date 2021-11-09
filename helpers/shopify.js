@@ -15,7 +15,7 @@ exports.validateShopify = async (req, res, next) => {
 		// const authToken = String("Basic " + buff.toString('base64'));
 		const {
 			data: {
-				shop: { id, domain, country, shop_owner },
+				shop: { id, myshopify_domain, country, shop_owner },
 			},
 		} = await axios.get(URL);
 		//check if a user has an account integrated with this shopify account already
@@ -24,12 +24,12 @@ exports.validateShopify = async (req, res, next) => {
 		if (!users.length) {
 			await db.User.findOneAndUpdate(
 				{ email },
-				{ shopify: { baseURL, accessToken: password, shopId: id, domain: `${shopName}.myshopify.com`, country, shopOwner: shop_owner } },
+				{ shopify: { baseURL, accessToken: password, shopId: id, domain: myshopify_domain, country, shopOwner: shop_owner } },
 				{ new: true }
 			);		// append the shop id to user mongo
 			return res.status(200).json({
 				shopId: id,
-				domain: `${shopName}.myshopify.com`,
+				domain: myshopify_domain,
 				country,
 				shopOwner: shop_owner,
 				baseURL,
