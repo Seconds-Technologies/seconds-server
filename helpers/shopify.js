@@ -24,12 +24,12 @@ exports.validateShopify = async (req, res, next) => {
 		if (!users.length) {
 			await db.User.findOneAndUpdate(
 				{ email },
-				{ shopify: { baseURL, accessToken: password, shopId: id, domain, country, shopOwner: shop_owner } },
+				{ shopify: { baseURL, accessToken: password, shopId: id, domain: `${shopName}.myshopify.com`, country, shopOwner: shop_owner } },
 				{ new: true }
 			);		// append the shop id to user mongo
 			return res.status(200).json({
 				shopId: id,
-				domain,
+				domain: `${shopName}.myshopify.com`,
 				country,
 				shopOwner: shop_owner,
 				baseURL,
