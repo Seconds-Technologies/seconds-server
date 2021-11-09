@@ -68,4 +68,4 @@ const deliveryHoursSchema = new mongoose.Schema(
 	{ _id: false }
 );
 
-module.exports = { deliveryHoursSchema, hoursSchema };
+module.exports = { deliveryHoursSchema };
