@@ -3,7 +3,7 @@ const express = require("express");
 const db = require("../models/index");
 const axios = require("axios");
 const moment = require("moment-timezone");
-const { filterAndUpdateProducts, filterAndRemove, filterOrders, updateOrders, updateStatuses } = require("./index");
+const { filterAndUpdateProducts, filterAndRemove, updateOrders } = require("./index");
 
 exports.validateShopify = async (req, res, next) => {
 	try {
