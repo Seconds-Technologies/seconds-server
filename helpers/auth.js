@@ -1,3 +1,4 @@
+require('dotenv').config();
 const db = require('../models/index');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
@@ -18,6 +19,7 @@ const login = async (req, res, next) => {
 			email,
 			phone,
 			fullAddress,
+			address,
 			company,
 			createdAt,
 			apiKey,
@@ -52,6 +54,7 @@ const login = async (req, res, next) => {
 				createdAt,
 				phone,
 				fullAddress,
+				address,
 				profileImageData: img,
 				shopify: shopify.accessToken,
 				deliveryHours,
@@ -110,6 +113,7 @@ const register = async (req, res, next) => {
 			company,
 			phone,
 			fullAddress,
+			address,
 			createdAt,
 			deliveryHours,
 			apiKey,
@@ -143,6 +147,7 @@ const register = async (req, res, next) => {
 			apiKey,
 			phone,
 			fullAddress,
+			address,
 			selectionStrategy,
 			token,
 			stripeCustomerId,
