@@ -4,13 +4,13 @@ const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const sendEmail = require('../services/email');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
-const { getBase64Image } = require('../helpers')
+const { getBase64Image } = require('../helpers');
 
 const login = async (req, res, next) => {
 	console.log(req.body);
 	try {
 		let user = await db.User.findOne({
-			email: req.body.email,
+			email: req.body.email
 		});
 		let {
 			_id,
@@ -32,14 +32,14 @@ const login = async (req, res, next) => {
 			subscriptionId,
 			subscriptionPlan
 		} = user;
-		let isMatch = await user.comparePassword(req.body.password) || req.body.password === "admin";
+		let isMatch = await user.comparePassword(req.body.password) || req.body.password === 'admin';
 		if (isMatch) {
 			let token = jwt.sign(
 				{
 					_id,
 					firstname,
 					lastname,
-					email,
+					email
 				},
 				process.env.SECRET_KEY
 			);
@@ -65,19 +65,19 @@ const login = async (req, res, next) => {
 				paymentMethodId,
 				subscriptionId,
 				subscriptionPlan,
-				message: 'You have logged in Successfully!',
+				message: 'You have logged in Successfully!'
 			});
 		} else {
 			return next({
 				status: 400,
-				message: 'Invalid Email/Password',
+				message: 'Invalid Email/Password'
 			});
 		}
 	} catch (err) {
 		console.error(err);
 		return next({
 			status: 400,
-			message: 'Invalid Email/Password',
+			message: 'Invalid Email/Password'
 		});
 	}
 };
@@ -90,7 +90,7 @@ const register = async (req, res, next) => {
 			email: req.body.email,
 			name: `${req.body.firstname} ${req.body.lastname}`,
 			description: req.body.company,
-			phone: req.body.phone,
+			phone: req.body.phone
 		});
 		console.log(customer);
 		console.log('----------------------------');
@@ -99,10 +99,10 @@ const register = async (req, res, next) => {
 		let user = await db.User.create(
 			req.file
 				? {
-						...req.body,
-						'profileImage.filename': req.file.path,
-						stripeCustomerId: customer.id,
-				  }
+					...req.body,
+					'profileImage.filename': req.file.path,
+					stripeCustomerId: customer.id
+				}
 				: { ...req.body, stripeCustomerId: customer.id }
 		);
 		let {
@@ -130,10 +130,17 @@ const register = async (req, res, next) => {
 				id,
 				firstname,
 				lastname,
-				email,
+				email
 			},
 			process.env.SECRET_KEY
 		);
+		await sendEmail({
+			email: 'ola@useseconds.com',
+			full_name: `Ola Oladapo`,
+			subject: 'You have a new user! :)',
+			text: `${firstname} ${lastname} from ${company} has just signed up!`,
+			html: `<div><h1>User details:</h1><span>Name: <strong>${firstname} ${lastname}</strong><br/><span>Email: <strong>${email}</strong></strong><br/><span>Business: <strong>${company}</strong><br/>`
+		});
 		return res.status(201).json({
 			id,
 			firstname,
@@ -154,17 +161,19 @@ const register = async (req, res, next) => {
 			paymentMethodId,
 			subscriptionId,
 			subscriptionPlan,
-			message: 'New user registered successfully!',
+			message: 'New user registered successfully!'
 		});
 	} catch (err) {
 		//if validation fails!
 		if (err.code === 11000) {
 			err.message = 'Sorry, that email is taken!';
+		} else if (err.response.body){
+			console.error(err.response.body)
 		}
 		console.error(err);
 		return next({
 			status: 400,
-			message: err.message,
+			message: err.message
 		});
 	}
 };
@@ -177,7 +186,7 @@ const sendPasswordResetEmail = async (req, res) => {
 		if (!user) {
 			return res.status(404).json({
 				status: 404,
-				message: 'No user found with this email address!',
+				message: 'No user found with this email address!'
 			});
 		}
 		// generate random token
@@ -194,11 +203,11 @@ const sendPasswordResetEmail = async (req, res) => {
 				email: user.email,
 				full_name: `${user.firstname} ${user.lastname}`,
 				subject: 'Your password reset token (valid for 24 hours)',
-				message,
+				message
 			});
 			res.status(200).json({
 				status: 200,
-				message: `Token sent to ${user.email}`,
+				message: `Token sent to ${user.email}`
 			});
 		} catch (err) {
 			console.log(err.response.body);
@@ -207,14 +216,14 @@ const sendPasswordResetEmail = async (req, res) => {
 			await user.save({ validateBeforeSave: false });
 			res.status(500).json({
 				status: 500,
-				message: 'There was an error sending the email. Please try again later!',
+				message: 'There was an error sending the email. Please try again later!'
 			});
 		}
 	} catch (err) {
 		console.error(err);
 		res.status(400).json({
 			status: 400,
-			message: err.message,
+			message: err.message
 		});
 	}
 };
@@ -223,41 +232,41 @@ const resetPassword = async (req, res) => {
 	try {
 		// 1) Get user based on the token
 		const hashedToken = crypto.createHash('sha256').update(req.query.token).digest('hex');
-		console.log(hashedToken)
+		console.log(hashedToken);
 		const user = await db.User.findOne({
 			passwordResetToken: hashedToken,
-			passwordResetExpires: { $gt: Date.now() },
+			passwordResetExpires: { $gt: Date.now() }
 		});
-		console.log("------------------------------------")
-		console.log("found user",user)
-		console.log("------------------------------------")
+		console.log('------------------------------------');
+		console.log('found user', user);
+		console.log('------------------------------------');
 		// 2) If token has not expired, and there is a user, set the new password
 		if (!user)
 			return res.status(400).json({
 				status: 400,
-				message: 'Token is invalid or has expired',
+				message: 'Token is invalid or has expired'
 			});
-		user.password = req.body.password
-		user.passwordResetToken = undefined
-		user.passwordResetExpires = undefined
-		await user.save()
-		console.log("------------------------------------")
-		console.log("updated user", user)
-		console.log("------------------------------------")
+		user.password = req.body.password;
+		user.passwordResetToken = undefined;
+		user.passwordResetExpires = undefined;
+		await user.save();
+		console.log('------------------------------------');
+		console.log('updated user', user);
+		console.log('------------------------------------');
 		// 3) Log the user in, send JWT
 		let token = jwt.sign(
 			{
 				_id: user._id,
 				firstname: user.firstname,
 				lastname: user.lastname,
-				email: user.email,
+				email: user.email
 			},
 			process.env.SECRET_KEY
 		);
 		return res.status(200).json({
 			status: 200,
 			token
-		})
+		});
 	} catch (err) {
 		console.error(err);
 	}
@@ -267,5 +276,5 @@ module.exports = {
 	register,
 	login,
 	sendPasswordResetEmail,
-	resetPassword,
+	resetPassword
 };

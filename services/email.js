@@ -24,7 +24,8 @@ const sendEmail = async options => {
 		from: 'Seconds Technologies <ola@useseconds.com>',
 		to: `${options.full_name} <${options.email}>`,
 		subject: options.subject,
-		text: options.message,
+		...(options.message && {text: options.message}),
+		...(options.html && {html: options.html})
 	};
 
 	/*const mailOptionsTest = {
