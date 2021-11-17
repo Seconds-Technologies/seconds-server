@@ -29,7 +29,6 @@
     "nanoid": "^3.1.25",
     "nodemailer": "^6.7.0",
     "nodemailer-sendgrid": "^1.0.3",
-    "nodemon": "^2.0.7",
     "path": "^0.12.7",
     "shopify-api-node": "^3.6.12",
     "shorthash": "^0.0.2",
