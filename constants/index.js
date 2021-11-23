@@ -6,3 +6,6 @@ exports.S3 = new AWS.S3({
 	secretAccessKey: process.env.S3_SECRET_KEY,
 	region: process.env.S3_BUCKET_REGION
 })
+
+exports.SUBSCRIPTION_PLANS = ['growth', 'enterprise']
+exports.COMMISSION_PLANS = ['growth-commission', 'enterprise-commission']
