@@ -64,4 +64,8 @@ app.use(errorHandler);
 app.listen(PORT, () => {
 	console.log(`Server is listening on port ${PORT}...`);
 	console.log('Database:', process.env.MONGODB_URI);
+	const SUBSCRIPTION_PLANS = process.env.STRIPE_SUBSCRIPTION_PLANS.split(' ')
+	const COMMISSION_PLANS = process.env.STRIPE_COMMISSION_PLANS.split(' ')
+	console.log(SUBSCRIPTION_PLANS)
+	console.log(COMMISSION_PLANS)
 });
