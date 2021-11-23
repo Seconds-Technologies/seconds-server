@@ -120,7 +120,7 @@ async function handleCanceledSubscription(subscription) {
 			if (SUBSCRIPTION_PLANS.includes(data[0].price.lookup_key)) {
 				user = await db.User.findOneAndUpdate(
 					{ stripeCustomerId: customer },
-					{ subscriptionId: '', subscriptionPlan: '', stripeCommissionId: '' },
+					{ subscriptionId: '', subscriptionPlan: ''},
 					{ new: true }
 				);
 				await stripe.subscriptions.del(user.stripeCommissionId, {
