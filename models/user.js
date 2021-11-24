@@ -105,6 +105,11 @@ const userSchema = new mongoose.Schema({
 		type: String,
 		default: ""
 	},
+	subscriptionItems: {
+		standardMonthly: "",
+		standardCommission: "",
+		multiDropCommission: ""
+	},
 	deliveryHours: {
 		type: deliveryHoursSchema,
 		required: true,
@@ -193,9 +198,6 @@ const userSchema = new mongoose.Schema({
 		default: Date.now()
 	},
 	jobs: [],
-	stripeCommissionId: {
-		type: String
-	}
 });
 
 userSchema.pre('save', async function (next) {

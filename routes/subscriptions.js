@@ -67,9 +67,10 @@ router.post('/create-checkout-session', async (req, res) => {
 	console.log("LOOKUP KEY:", lookup_key)
 	console.log("--------------------------------------")
 	const prices = await stripe.prices.list({
-		lookup_keys: [lookup_key],
+		lookup_keys: [lookup_key, `${lookup_key}-commission`, 'multi-drop-commission'],
 		expand: ['data.product'],
 	});
+	console.log(prices)
 	const session = await stripe.checkout.sessions.create({
 		customer: stripe_customer_id,
 		billing_address_collection: 'auto',
@@ -80,8 +81,13 @@ router.post('/create-checkout-session', async (req, res) => {
 				// For metered billing, do not pass quantity
 				quantity: 1,
 			},
+			{ price: prices.data[1].id },
+			{ price: prices.data[2].id }
 		],
 		mode: 'subscription',
+		subscription_data: {
+			trial_end: moment().add(1, "month").unix(),
+		},
 		success_url: `${String(process.env.CLIENT_HOST)}/subscription/payment?success=true&session_id={CHECKOUT_SESSION_ID}`,
 		cancel_url: `${String(process.env.CLIENT_HOST)}/subscription/payment?canceled=true`,
 	});

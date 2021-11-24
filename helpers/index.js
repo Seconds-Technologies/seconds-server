@@ -1,6 +1,5 @@
 const { S3 } = require('../constants/index');
 const db = require('../models');
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
 function encode(data) {
 	let buf = Buffer.from(data);
@@ -62,37 +61,19 @@ async function handleActiveSubscription(subscription) {
 	try {
 		console.log(subscription.items.data);
 		const SUBSCRIPTION_PLANS = process.env.STRIPE_SUBSCRIPTION_PLANS.split(' ');
-		const COMMISSION_PLANS = process.env.STRIPE_COMMISSION_PLANS.split(' ');
 		const { id, customer, status, items: { data } } = subscription;
-		if (status === 'active') {
-			let user = null;
-			if (SUBSCRIPTION_PLANS.includes(data[0].price.lookup_key)) {
-				user = await db.User.findOneAndUpdate(
-					{ stripeCustomerId: customer },
-					{ subscriptionId: id, subscriptionPlan: data[0].price.lookup_key },
-					{ new: true }
-				);
-				const prices = await stripe.prices.list({
-					lookup_keys: [`${data[0].price.lookup_key}-commission`, 'multi-drop-commission'],
-					expand: ['data.product']
-				});
-				await stripe.subscriptions.create({
-					customer: user.stripeCustomerId,
-					default_payment_method: user.paymentMethodId,
-					items: [
-						{ price: prices.data[0].id },
-						{ price: prices.data[1].id }
-					]
-				});
-			} else if (COMMISSION_PLANS.includes(data[0].price.lookup_key)) {
-				user = await db.User.findOneAndUpdate(
-					{ stripeCustomerId: customer },
-					{ stripeCommissionId: id },
-					{ new: true }
-				);
-			} else {
-				throw new Error(`Unrecognized subscription item with look-up key ${data[0].price.lookup_key}`);
-			}
+		if (status === 'active' || status === 'trialing' && SUBSCRIPTION_PLANS.includes(data[0].price.lookup_key)) {
+			const user = await db.User.findOneAndUpdate(
+				{ stripeCustomerId: customer },
+				{
+					subscriptionId: id,
+					subscriptionPlan: data[0].price.lookup_key,
+					'subscriptionItems.standardMonthly': data[0].id,
+					'subscriptionItems.standardCommission': data[1].id,
+					'subscriptionItems.multiDropCommission': data[2].id
+				},
+				{ new: true }
+			);
 			if (user) {
 				console.log('------------------------------------');
 				console.log('updated user:', user);
@@ -102,7 +83,7 @@ async function handleActiveSubscription(subscription) {
 				throw new Error('No user found with a matching stripe customer ID!');
 			}
 		} else {
-			throw new Error('Subscription status is not active');
+			throw new Error(`Status for subscription with lookup key: ${data[0].price.lookup_key}, is not active`);
 		}
 	} catch (err) {
 		console.error(err);
@@ -114,26 +95,18 @@ async function handleCanceledSubscription(subscription) {
 	try {
 		console.log(subscription.items.data);
 		const SUBSCRIPTION_PLANS = process.env.STRIPE_SUBSCRIPTION_PLANS.split(' ');
-		const COMMISSION_PLANS = process.env.STRIPE_COMMISSION_PLANS.split(' ');
 		const { customer, status, items: { data } } = subscription;
-		if (status === 'canceled') {
-			let user = null;
-			if (SUBSCRIPTION_PLANS.includes(data[0].price.lookup_key)) {
-				user = await db.User.findOneAndUpdate(
-					{ stripeCustomerId: customer },
-					{ subscriptionId: '', subscriptionPlan: ''},
-					{ new: true }
-				);
-				await stripe.subscriptions.del(user.stripeCommissionId, {
-					invoice_now: true
-				});
-			} else if (COMMISSION_PLANS.includes(data[0].price.lookup_key)) {
-				user = await db.User.findOneAndUpdate(
-					{ stripeCustomerId: customer },
-					{ stripeCommissionId: '' },
-					{ new: true }
-				);
-			}
+		if (status === 'canceled' && SUBSCRIPTION_PLANS.includes(data[0].price.lookup_key)) {
+			const user = await db.User.findOneAndUpdate(
+				{ stripeCustomerId: customer },
+				{
+					subscriptionId: '', subscriptionPlan: '',
+					'subscriptionItems.standardMonthly': '',
+					'subscriptionItems.standardCommission': '',
+					'subscriptionItems.multiDropCommission': ''
+				},
+				{ new: true }
+			);
 			console.log('------------------------------------');
 			console.log('updated user:', user);
 			console.log('------------------------------------');
