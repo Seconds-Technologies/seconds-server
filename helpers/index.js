@@ -73,14 +73,15 @@ async function handleActiveSubscription(subscription) {
 					{ new: true }
 				);
 				const prices = await stripe.prices.list({
-					lookup_keys: [`${data[0].price.lookup_key}-commission`],
+					lookup_keys: [`${data[0].price.lookup_key}-commission`, 'multi-drop-commission'],
 					expand: ['data.product']
 				});
 				await stripe.subscriptions.create({
 					customer: user.stripeCustomerId,
 					default_payment_method: user.paymentMethodId,
 					items: [
-						{ price: prices.data[0].id }
+						{ price: prices.data[0].id },
+						{ price: prices.data[1].id }
 					]
 				});
 			} else if (COMMISSION_PLANS.includes(data[0].price.lookup_key)) {
