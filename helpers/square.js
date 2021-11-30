@@ -34,7 +34,7 @@ const authorizeSquareAccount = async (req, res, next) => {
 		const state = uuidv4()
 		const URL = `${baseURL}/oauth2/authorize?client_id=${clientId}&scope=${scope}&session=false&state=${state}`
 		console.log(URL)
-		const user = await db.User.findByIdAndUpdate({"email": email}, {"square.clientId": clientId, "square.clientSecret": clientSecret})
+		const user = await db.User.findOneAndUpdate({"email": email}, {"square.clientId": clientId, "square.clientSecret": clientSecret})
 		console.log(user.square)
 		/*const config = {
 			headers: {
