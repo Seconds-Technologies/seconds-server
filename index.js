@@ -10,6 +10,7 @@ const errorHandler = require('./helpers/error');
 const authRoutes = require('./routes/auth');
 const mainRoutes = require('./routes/main');
 const shopifyRoutes = require('./routes/shopify');
+const squareRoutes = require('./routes/square');
 const paymentRoutes = require('./routes/payments');
 const stripeRoutes = require('./routes/stripe');
 const subscriptionRoutes = require('./routes/subscriptions');
@@ -47,6 +48,7 @@ app.use('/uploads', express.static('uploads'));
 app.use('/server/auth', authRoutes);
 app.use('/server/main', authenticateUser, mainRoutes); //TODO - Correct path for redux thunks in client-end
 app.use('/server/shopify', authenticateUser, shopifyRoutes);
+app.use('/server/square', squareRoutes)
 app.use('/server/payment', authenticateUser, paymentRoutes);
 app.use('/server/subscription', subscriptionRoutes);
 
