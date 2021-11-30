@@ -32,6 +32,7 @@
     "path": "^0.12.7",
     "shopify-api-node": "^3.6.12",
     "shorthash": "^0.0.2",
+    "square": "^16.0.0",
     "stripe": "^8.177.0",
     "swagger-jsdoc": "^6.1.0",
     "swagger-ui-express": "^4.1.6",
