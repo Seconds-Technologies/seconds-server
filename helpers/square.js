@@ -19,6 +19,7 @@ const getCredentials = async (req, res) => {
 			shortLived: false
 		}
 		const { result } = await client.oAuthApi.obtainToken(payload)
+		console.log(result)
 		res.status(200).json({ clientId, clientSecret, accessToken: result.accessToken, shopId: result.merchantId, domain: "", country: "" });
 	} catch (err) {
 		console.error(err);
@@ -34,7 +35,7 @@ const authorizeSquareAccount = async (req, res, next) => {
 		const state = uuidv4()
 		const URL = `${baseURL}/oauth2/authorize?client_id=${clientId}&scope=${scope}&session=false&state=${state}`
 		console.log(URL)
-		const user = await db.User.findOneAndUpdate({"email": email}, {"square.clientId": clientId, "square.clientSecret": clientSecret})
+		const user = await db.User.findOneAndUpdate({"email": email}, {"square.clientId": clientId, "square.clientSecret": clientSecret}, {new: true})
 		console.log(user.square)
 		/*const config = {
 			headers: {
