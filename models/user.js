@@ -87,6 +87,7 @@ const userSchema = new mongoose.Schema({
 		country: String,
 		clientId: String,
 		clientSecret: String,
+		state: String,
 		accessToken: String
 	},
 	apiKey: {
