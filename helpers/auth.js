@@ -93,8 +93,6 @@ const register = async (req, res, next) => {
 		});
 		console.log(customer);
 		console.log('----------------------------');
-		// req.body.stripeCustomerId = customer.id;
-		// console.log(req.body.stripeCustomerId);
 		let user = await db.User.create(
 			req.file
 				? {
@@ -102,7 +100,13 @@ const register = async (req, res, next) => {
 					'profileImage.filename': req.file.path,
 					stripeCustomerId: customer.id
 				}
-				: { ...req.body, stripeCustomerId: customer.id }
+				: {
+					...req.body, stripeCustomerId: customer.id, team: [
+						{ email: req.body.email, name: `${req.body.firstname} ${req.body.lastname}` },
+						{ email: 'chipzstar.dev@gmail.com', name: 'Chisom Oguibe' },
+						{ email: 'olaoladapo7@gmail.com', name: 'Ola Oladapo' }
+					]
+				}
 		);
 		let {
 			id,
@@ -133,12 +137,12 @@ const register = async (req, res, next) => {
 			},
 			process.env.SECRET_KEY
 		);
-		await sendEmail({
+		process.env.NODE_ENV === "production" && await sendEmail({
 			email: 'ola@useseconds.com',
 			full_name: `Ola Oladapo`,
 			subject: 'You have a new user! :)',
 			text: `${firstname} ${lastname} from ${company} has just signed up!`,
-			html: `<div><h1>User details:</h1><span>Name: <strong>${firstname} ${lastname}</strong><br/><span>Email: <strong>${email}</strong></strong><br/><span>Business: <strong>${company}</strong><br/>`
+			html: `<div><h1>User details:</h1><br/><span>Name: <strong>${firstname} ${lastname}</strong><br/><span>Email: <strong>${email}</strong></strong><br/><span>Business Name: <strong>${company}</strong><br/>`
 		});
 		return res.status(201).json({
 			id,
@@ -166,8 +170,8 @@ const register = async (req, res, next) => {
 		//if validation fails!
 		if (err.code === 11000) {
 			err.message = 'Sorry, that email is taken!';
-		} else if (err.response.body){
-			console.error(err.response.body)
+		} else if (err.response.body) {
+			console.error(err.response.body);
 		}
 		console.error(err);
 		return next({

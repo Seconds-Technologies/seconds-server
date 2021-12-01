@@ -1,26 +1,65 @@
 const db = require('../models/index');
 const { v4: uuidv4 } = require('uuid');
-const { Client, Environment } = require('square')
+const { Client, Environment } = require('square');
 
 const client = new Client({
 	environment: Environment.Production
-})
+});
 
 const getCredentials = async (req, res) => {
 	try {
 		const { email, code } = req.query;
-		const { square: { clientId, clientSecret} } = await db.User.findOne({"email": email})
-		// const URL = "https://connect.squareup.com/oauth2/token"
+		// find the user authorizing their square account
+		const user = await db.User.findOne({ 'email': email }, {});
+		// grab the square client ID and secret used for the auth
+		const { clientId, clientSecret } = user['square'];
 		const payload = {
 			clientId,
 			clientSecret,
 			code,
 			grantType: 'authorization_code',
 			shortLived: false
-		}
-		const { result } = await client.oAuthApi.obtainToken(payload)
-		console.log(result)
-		res.status(200).json({ clientId, clientSecret, accessToken: result.accessToken, shopId: result.merchantId, domain: "", country: "" });
+		};
+		// use square client api to fetch the access token using credentials
+		const { result } = await client.oAuthApi.obtainToken(payload);
+		// configure new square api client with authenticated access token
+		const newClient = client.withConfiguration({
+			accessToken: result.accessToken
+		});
+		// use merchantId to grab the business information
+		const {
+			result: { merchant },
+			...httpResponse
+		} = await newClient.merchantsApi.retrieveMerchant(result.merchantId);
+		console.log('MERCHANT INFO');
+		console.table(merchant);
+		// console.log(httpResponse)
+		// grab the account's primary site domain
+		const { result: { sites } } = await newClient.sitesApi.listSites();
+		console.log('SITE INFO');
+		sites.forEach(site => console.table(site));
+		// store access token and related info to database
+		user.updateOne({
+			'square': {
+				clientId,
+				clientSecret,
+				shopId: merchant.id,
+				shopName: merchant.businessName,
+				domain: sites[0].domain,
+				accessToken: result.accessToken,
+				expireTime: result.expiresAt
+			}
+		});
+		await user.save();
+		res.status(200).json({
+			clientId,
+			clientSecret,
+			accessToken: result.accessToken,
+			expireTime: result.expiresAt,
+			shopId: result.merchantId,
+			shopName: merchant.businessName,
+			domain: sites[0].domain
+		});
 	} catch (err) {
 		console.error(err);
 		res.status(400).json({ message: err.message });
@@ -30,13 +69,16 @@ const getCredentials = async (req, res) => {
 const authorizeSquareAccount = async (req, res, next) => {
 	try {
 		const { clientId, clientSecret, email } = req.body;
-		const baseURL = "https://connect.squareup.com"
-		const scope = "ORDERS_READ+MERCHANT_PROFILE_READ+PAYMENTS_READ+SETTLEMENTS_READ+BANK_ACCOUNTS_READ+INVENTORY_READ+CUSTOMERS_READ"
-		const state = uuidv4()
-		const URL = `${baseURL}/oauth2/authorize?client_id=${clientId}&scope=${scope}&session=false&state=${state}`
-		console.log(URL)
-		const user = await db.User.findOneAndUpdate({"email": email}, {"square.clientId": clientId, "square.clientSecret": clientSecret}, {new: true})
-		console.log(user.square)
+		const baseURL = 'https://connect.squareup.com';
+		const scope = 'ORDERS_READ+MERCHANT_PROFILE_READ+PAYMENTS_READ+SETTLEMENTS_READ+BANK_ACCOUNTS_READ+INVENTORY_READ+CUSTOMERS_READ';
+		const state = uuidv4();
+		const URL = `${baseURL}/oauth2/authorize?client_id=${clientId}&scope=${scope}&session=false&state=${state}`;
+		console.log(URL);
+		const user = await db.User.findOneAndUpdate({ 'email': email }, {
+			'square.clientId': clientId,
+			'square.clientSecret': clientSecret
+		}, { new: true });
+		console.log(user['square']);
 		/*const config = {
 			headers: {
 				"Square-Version": process.env.SQUARE_VERSION,
@@ -53,10 +95,10 @@ const authorizeSquareAccount = async (req, res, next) => {
 		console.log(response)
 		//check if a user has an account integrated with this shopify account already
 		const users = await db.User.find({"square.shopId": response['merchant_id']})*/
-		res.redirect(303, URL)
+		res.redirect(303, URL);
 	} catch (err) {
 		console.error(err);
-		res.status(400).json({message: err.message})
+		res.status(400).json({ message: err.message });
 	}
 };
 
