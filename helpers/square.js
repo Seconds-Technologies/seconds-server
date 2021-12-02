@@ -47,11 +47,11 @@ const getCredentials = async (req, res) => {
 	try {
 		const { email, code, state } = req.query;
 		// find the user authorizing their square account
-		const user = await db.User.findOne({ 'email': email }, {});
-		console.log("State Received:", state)
-		console.log("State Stored:", user['square'].state)
-		if (state !== user['square'].state){
-			throw new Error('Cannot verify the origin. Request authorization state does not match our records')
+		const user = await db.User.findOne({ 'email': email });
+		console.log('State Received:', state);
+		console.log('State Stored:', user['square'].state);
+		if (state !== user['square'].state) {
+			throw new Error('Cannot verify the origin. Request authorization state does not match our records');
 		}
 		// grab the square client ID and secret used for the auth
 		const { clientId, clientSecret } = user['square'];
@@ -81,18 +81,18 @@ const getCredentials = async (req, res) => {
 		console.log('SITE INFO');
 		sites.forEach(site => console.table(site));
 		// store access token and related info to database
-		user.updateOne({
-			'square': {
-				clientId,
-				clientSecret,
-				shopId: merchant.id,
-				shopName: merchant.businessName,
-				domain: sites[0].domain,
-				accessToken: result.accessToken,
-				expireTime: result.expiresAt
-			}
-		});
+		user.square = {
+			clientId,
+			clientSecret,
+			shopId: merchant.id,
+			shopName: merchant.businessName,
+			domain: sites[0].domain,
+			accessToken: result.accessToken,
+			expireTime: result.expiresAt
+		};
 		await user.save();
+		console.log("USER")
+		console.table(user)
 		res.status(200).json({
 			clientId,
 			clientSecret,
