@@ -92,7 +92,7 @@ const getCredentials = async (req, res) => {
 		};
 		await user.save();
 		console.log("USER")
-		console.table(user)
+		console.log(user)
 		res.status(200).json({
 			clientId,
 			clientSecret,
