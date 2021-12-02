@@ -49,7 +49,7 @@ const getCredentials = async (req, res) => {
 		// find the user authorizing their square account
 		const user = await db.User.findOne({ 'email': email }, {});
 		console.log("State Received:", state)
-		console.log("State Stored:", state)
+		console.log("State Stored:", user['square'].state)
 		if (state !== user['square'].state){
 			throw new Error('Cannot verify the origin. Request authorization state does not match our records')
 		}
