@@ -35,7 +35,7 @@ const sendEmail = async options => {
 		text: options.message
 	}*/
 	// 3) Actually send the email
-	await transporter.sendMail(mailOptions);
+	process.env.ENVIRONMENT_MODE === "live" && await transporter.sendMail(mailOptions);
 };
 
 module.exports = sendEmail;

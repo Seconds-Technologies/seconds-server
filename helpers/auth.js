@@ -137,7 +137,7 @@ const register = async (req, res, next) => {
 			},
 			process.env.SECRET_KEY
 		);
-		process.env.NODE_ENV === "production" && await sendEmail({
+		await sendEmail({
 			email: 'ola@useseconds.com',
 			full_name: `Ola Oladapo`,
 			subject: 'You have a new user! :)',
