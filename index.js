@@ -6,7 +6,7 @@ const logger = require('morgan');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const db = require('./models/index');
-const errorHandler = require('./helpers/error');
+const { errorHandler } = require('./helpers/error');
 const authRoutes = require('./routes/auth');
 const mainRoutes = require('./routes/main');
 const shopifyRoutes = require('./routes/shopify');
@@ -49,7 +49,7 @@ app.use('/server/auth', authRoutes);
 app.use('/server/main', authenticateUser, mainRoutes); //TODO - Correct path for redux thunks in client-end
 app.use('/server/shopify', authenticateUser, shopifyRoutes);
 app.use('/server/square', squareRoutes)
-app.use('/server/payment', authenticateUser, paymentRoutes);
+app.use('/server/payment', paymentRoutes);
 app.use('/server/subscription', subscriptionRoutes);
 
 //TODO - move middleware above server routes and test

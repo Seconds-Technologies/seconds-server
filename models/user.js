@@ -120,6 +120,20 @@ const userSchema = new mongoose.Schema({
 		standardCommission: "",
 		multiDropCommission: ""
 	},
+	deliveryStrategies: {
+		eta: {
+			type: Boolean,
+			default: false
+		},
+		price: {
+			type: Boolean,
+			default: false
+		},
+		rating: {
+			type: Boolean,
+			default: false
+		}
+	},
 	deliveryHours: {
 		type: deliveryHoursSchema,
 		required: true,

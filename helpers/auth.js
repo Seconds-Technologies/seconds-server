@@ -82,26 +82,25 @@ const login = async (req, res, next) => {
 };
 
 const register = async (req, res, next) => {
+	let apiKey = '';
 	try {
-		//create a user
-		console.log('----------------------------');
-		const customer = await stripe.customers.create({
-			email: req.body.email,
-			name: `${req.body.firstname} ${req.body.lastname}`,
-			description: req.body.company,
-			phone: req.body.phone
-		});
-		console.log(customer);
-		console.log('----------------------------');
+		const rand = crypto.randomBytes(24);
+		let chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'.repeat(2);
+
+		for (let i = 0; i < rand.length; i++) {
+			let index = rand[i] % chars.length;
+			apiKey += chars[index];
+		}
+		console.log('Generated API Key', apiKey);
 		let user = await db.User.create(
 			req.file
 				? {
 					...req.body,
-					'profileImage.filename': req.file.path,
-					stripeCustomerId: customer.id
+					apiKey,
+					'profileImage.filename': req.file.path
 				}
 				: {
-					...req.body, stripeCustomerId: customer.id, team: [
+					...req.body, apiKey, team: [
 						{ email: req.body.email, name: `${req.body.firstname} ${req.body.lastname}` },
 						{ email: 'chipzstar.dev@gmail.com', name: 'Chisom Oguibe' },
 						{ email: 'olaoladapo7@gmail.com', name: 'Ola Oladapo' }
@@ -170,13 +169,60 @@ const register = async (req, res, next) => {
 		//if validation fails!
 		if (err.code === 11000) {
 			err.message = 'Sorry, that email is taken!';
-		} else if (err.response.body) {
+		} else if (err.response && err.response.body) {
 			console.error(err.response.body);
 		}
 		console.error(err);
 		return next({
 			status: 400,
 			message: err.message
+		});
+	}
+};
+
+const newStripeCustomer = async (req, res, next) => {
+	try {
+		const { email } = req.body;
+		//create a user
+		console.log('----------------------------');
+		const customer = await stripe.customers.create({
+			email: req.body.email,
+			name: `${req.body.firstname} ${req.body.lastname}`,
+			description: req.body.company,
+			phone: req.body.phone
+		});
+		console.log(customer);
+		await db.User.findOneAndUpdate({ email }, { "stripeCustomerId": customer.id }, { new: true });
+		console.log('----------------------------');
+		res.status(200).json(customer);
+	} catch (err) {
+		console.error(err);
+		res.status(500).json({
+			error: {
+				message: err.message || "Something went wrong."
+			}
+		});
+	}
+};
+
+const validateCredentials = async (req, res, next) => {
+	try {
+		console.log(req.body);
+		const { firstname, lastname, email, company, phone, fullAddress, address } = req.body;
+		const count = await db.User.countDocuments({ 'email': email });
+		console.log(count);
+		if (count > 0) throw new Error('User email has been taken');
+		res.status(200).json({
+			message: 'User email is valid',
+			user: { firstname, lastname, email, company, phone, fullAddress, address },
+			count
+		});
+	} catch (err) {
+		console.error(err);
+		res.status(400).json({
+			message: err.message,
+			user: null,
+			count: 1
 		});
 	}
 };
@@ -278,6 +324,8 @@ const resetPassword = async (req, res) => {
 module.exports = {
 	register,
 	login,
+	newStripeCustomer,
 	sendPasswordResetEmail,
+	validateCredentials,
 	resetPassword
 };

@@ -24,9 +24,9 @@ router.post("/setup-intent", async (req, res) => {
 })
 
 router.post("/add-payment-method", async (req, res) => {
-	const {customerId, paymentMethodId, email} = req.body;
+	const {stripeCustomerId, paymentMethodId, email} = req.body;
 	try {
-		const customer = await stripe.customers.update(customerId, {
+		const customer = await stripe.customers.update(stripeCustomerId, {
 			invoice_settings: {
 				default_payment_method: paymentMethodId
 			}
@@ -79,7 +79,8 @@ router.post("/update-payment-method", async (req, res) => {
 
 router.post("/remove-payment-method", async (req, res) => {
 	try {
-		const {email, paymentMethodId} = req.body;
+		const { email, paymentMethodId } = req.body;
+		console.table(req.body)
 		// detach payment method from stripe customer
 		const paymentMethod = await stripe.paymentMethods.detach(
 			paymentMethodId
@@ -90,12 +91,13 @@ router.post("/remove-payment-method", async (req, res) => {
 		// remove paymentMethodId from user in database
 		const user = await db.User.findOneAndUpdate({"email": email}, {"paymentMethodId": ""}, {new: true})
 		return res.status(200).json({
-			stripeCustomerId: user.stripeCustomerId,
-			paymentMethodId: user.paymentMethodId,
 			message: "Payment Method Removed!"
 		})
 	} catch (e) {
 		console.error(e)
+		res.status(400).json({
+			error: {...e}
+		})
 	}
 })
 
