@@ -3,12 +3,11 @@ const crypto = require('crypto');
 const shorthash = require('shorthash');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const { getBase64Image } = require('../helpers');
-const moment = require('moment');
 
 const generateSecurityKeys = async (req, res, next) => {
 	// generate the apiKey using random byte sequences
 	try {
-		const { email, strategy } = req.body;
+		const { email } = req.body;
 		const rand = crypto.randomBytes(24);
 		let chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'.repeat(2);
 		let apiKey = '';
@@ -19,7 +18,7 @@ const generateSecurityKeys = async (req, res, next) => {
 		}
 		console.log('Generated API Key', apiKey);
 		// update the user's details with the new api key and their strategy
-		await db.User.findOneAndUpdate({ email }, { apiKey: apiKey, selectionStrategy: strategy }, { new: true });
+		await db.User.findOneAndUpdate({ email }, { apiKey: apiKey }, { new: true });
 		// return the new apiKey
 		return res.status(201).json({
 			apiKey
@@ -128,9 +127,33 @@ const updateDeliveryHours = async (req, res, next) => {
 	}
 };
 
+const updateDeliveryStrategies = async (req, res, next) => {
+	try {
+		const { email } = req.query;
+		console.table(req.body);
+		const user = await db.User.findOneAndUpdate(
+			{ email },
+			{ deliveryStrategies: req.body },
+			{ new: true }
+		);
+		if (user) {
+			return res.status(200).json({
+				deliveryStrategies: user.deliveryStrategies,
+				message: 'delivery strategies updated'
+			})
+		}
+	} catch (e) {
+		console.error(e)
+		res.status(400).json({
+			message: e.message
+		});
+	}
+}
+
 module.exports = {
 	generateSecurityKeys,
 	updateProfile,
 	updateDeliveryHours,
-	uploadProfileImage
+	uploadProfileImage,
+	updateDeliveryStrategies
 };
