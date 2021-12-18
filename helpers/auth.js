@@ -82,8 +82,8 @@ const login = async (req, res, next) => {
 };
 
 const register = async (req, res, next) => {
-	let apiKey = '';
 	try {
+		let apiKey = '';
 		const rand = crypto.randomBytes(24);
 		let chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'.repeat(2);
 
@@ -118,7 +118,6 @@ const register = async (req, res, next) => {
 			address,
 			createdAt,
 			deliveryHours,
-			apiKey,
 			paymentMethodId,
 			selectionStrategy,
 			subscriptionId,
