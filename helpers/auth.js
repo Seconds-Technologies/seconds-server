@@ -91,16 +91,27 @@ const register = async (req, res, next) => {
 			let index = rand[i] % chars.length;
 			apiKey += chars[index];
 		}
-		console.log('Generated API Key', apiKey);
+		console.log('Generated API Key:', apiKey);
+		//create a stripe customer
+		console.log('----------------------------');
+		const customer = await stripe.customers.create({
+			email: req.body.email,
+			name: `${req.body.firstname} ${req.body.lastname}`,
+			description: req.body.company,
+			phone: req.body.phone
+		});
+		console.log('Stripe customer:', customer);
+		console.log('----------------------------');
 		let user = await db.User.create(
 			req.file
 				? {
 					...req.body,
 					apiKey,
+					stripeCustomerId: customer.id,
 					'profileImage.filename': req.file.path
 				}
 				: {
-					...req.body, apiKey, team: [
+					...req.body, apiKey, stripeCustomerId: customer.id, team: [
 						{ email: req.body.email, name: `${req.body.firstname} ${req.body.lastname}` },
 						{ email: 'chipzstar.dev@gmail.com', name: 'Chisom Oguibe' },
 						{ email: 'olaoladapo7@gmail.com', name: 'Ola Oladapo' }
@@ -182,7 +193,7 @@ const register = async (req, res, next) => {
 const newStripeCustomer = async (req, res, next) => {
 	try {
 		const { email } = req.body;
-		//create a user
+		//create a stripe customer
 		console.log('----------------------------');
 		const customer = await stripe.customers.create({
 			email: req.body.email,
@@ -191,14 +202,14 @@ const newStripeCustomer = async (req, res, next) => {
 			phone: req.body.phone
 		});
 		console.log(customer);
-		await db.User.findOneAndUpdate({ email }, { "stripeCustomerId": customer.id }, { new: true });
+		await db.User.findOneAndUpdate({ email }, { 'stripeCustomerId': customer.id }, { new: true });
 		console.log('----------------------------');
 		res.status(200).json(customer);
 	} catch (err) {
 		console.error(err);
 		res.status(500).json({
 			error: {
-				message: err.message || "Something went wrong."
+				message: err.message || 'Something went wrong.'
 			}
 		});
 	}
