@@ -50,10 +50,6 @@ const userSchema = new mongoose.Schema({
 		countryCode: {
 			type: String,
 			default: 'GB'
-		},
-		geolocation: {
-			type: "Point",
-			coordinates: [0, 0]
 		}
 	},
 	password: {
