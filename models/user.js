@@ -3,6 +3,7 @@ const crypto = require('crypto');
 const bcrypt = require('bcrypt');
 const moment = require('moment');
 const { deliveryHoursSchema } = require('./deliveryHoursSchema');
+const addressSchema = require('./addressSchema');
 
 const userSchema = new mongoose.Schema({
 	email: {
@@ -34,24 +35,7 @@ const userSchema = new mongoose.Schema({
 		type: Array,
 		default: []
 	},
-	address: {
-		street: {
-			type: String,
-			default: ''
-		},
-		city: {
-			type: String,
-			default: ''
-		},
-		postcode: {
-			type: String,
-			default: ''
-		},
-		countryCode: {
-			type: String,
-			default: 'GB'
-		}
-	},
+	address: addressSchema,
 	password: {
 		type: String,
 		required: true
