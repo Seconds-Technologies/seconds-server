@@ -10,7 +10,7 @@ const pointSchema = new mongoose.Schema({
 		type: [Number],
 		required: true
 	}
-});
+}, {_id: false});
 
 const addressSchema = new mongoose.Schema({
 	street: {
@@ -33,6 +33,6 @@ const addressSchema = new mongoose.Schema({
 		type: pointSchema,
 		index: '2dsphere'
 	}
-});
+}, {_id: false});
 
 module.exports = addressSchema;
