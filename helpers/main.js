@@ -105,11 +105,11 @@ const updateDeliveryHours = async (req, res, next) => {
 		console.table(req.body);
 		const user = await db.User.findOneAndUpdate(
 			{ email },
-			{ deliveryHours: req.body},
+			{ deliveryHours: req.body },
 			{ new: true }
 		);
 		if (user) {
-			console.log("Updated delivery hours")
+			console.log('Updated delivery hours');
 			return res.status(200).json({
 				updatedHours: user.deliveryHours,
 				message: 'delivery hours updated'
@@ -140,20 +140,69 @@ const updateDeliveryStrategies = async (req, res, next) => {
 			return res.status(200).json({
 				deliveryStrategies: user.deliveryStrategies,
 				message: 'delivery strategies updated'
-			})
+			});
 		}
 	} catch (e) {
-		console.error(e)
+		console.error(e);
 		res.status(400).json({
 			message: e.message
 		});
 	}
-}
+};
+
+const synchronizeUserInfo = async (req, res, next) => {
+	try {
+		const { email: EMAIL } = req.query;
+		let {
+			_id,
+			firstname,
+			lastname,
+			email,
+			phone,
+			fullAddress,
+			address,
+			company,
+			createdAt,
+			apiKey,
+			selectionStrategy,
+			shopify,
+			deliveryHours,
+			paymentMethodId,
+			stripeCustomerId,
+			subscriptionId,
+			subscriptionPlan
+		} = await db.User.findOne({ 'email': EMAIL });
+		res.status(200).json({
+			id: _id,
+			firstname,
+			lastname,
+			email,
+			company,
+			createdAt,
+			phone,
+			fullAddress,
+			address,
+			shopify: shopify.accessToken,
+			deliveryHours,
+			apiKey,
+			selectionStrategy,
+			stripeCustomerId,
+			paymentMethodId,
+			subscriptionId,
+			subscriptionPlan,
+			message: 'User info synchronized successfully'
+		});
+	} catch (err) {
+		console.error(err);
+		res.status(500).json({ message: err.message });
+	}
+};
 
 module.exports = {
 	generateSecurityKeys,
 	updateProfile,
 	updateDeliveryHours,
 	uploadProfileImage,
-	updateDeliveryStrategies
+	updateDeliveryStrategies,
+	synchronizeUserInfo
 };
