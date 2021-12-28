@@ -23,7 +23,8 @@ const {
 	updateProfile,
 	updateDeliveryHours,
 	uploadProfileImage,
-	updateDeliveryStrategies
+	updateDeliveryStrategies,
+	synchronizeUserInfo
 } = require("../helpers/main")
 
 router.post("/token", generateSecurityKeys);
@@ -31,5 +32,6 @@ router.post("/update-profile", updateProfile)
 router.post('/update-delivery-hours', updateDeliveryHours);
 router.post('/update-delivery-strategies', updateDeliveryStrategies)
 router.post("/upload", upload("seconds-profile-pictures").single('img'), uploadProfileImage)
+router.get("/sync-user", synchronizeUserInfo)
 
 module.exports = router;
