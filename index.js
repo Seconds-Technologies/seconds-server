@@ -23,7 +23,7 @@ const subscriptionRoutes = require('./routes/subscriptions');
 
 const app = express();
 app.use(logger('dev'));
-app.use(timeout('5000ms', {
+app.use(timeout('5s', {
 	respond: false,
 }))
 
@@ -41,13 +41,11 @@ app.use(
 		},
 	})
 );
-app.use(wooCommerceTimeout)
 
 //STRIPE WEBHOOKS
 app.use('/server/stripe', stripeRoutes);
 
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use(wooCommerceTimeout)
 
 app.get('/server', (req, res) => {
 	res.status(200).json({
@@ -59,7 +57,7 @@ app.use('/server/auth', authRoutes);
 app.use('/server/main', authenticateUser, mainRoutes); //TODO - Correct path for redux thunks in client-end
 app.use('/server/shopify', authenticateUser, shopifyRoutes);
 app.use('/server/square', authenticateUser, squareRoutes)
-app.use('/server/woocommerce', woocommerceRoutes)
+app.use('/server/woocommerce', wooCommerceTimeout, woocommerceRoutes)
 app.use('/server/payment', paymentRoutes);
 app.use('/server/subscription', subscriptionRoutes);
 
