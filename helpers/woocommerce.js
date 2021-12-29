@@ -5,6 +5,9 @@ const axios = require('axios');
 
 const authorizeWoocommerceAccount = async (req, res, next) => {
 	try {
+		setTimeout(() => {
+			res.redirect(304, `${process.env.CLIENT_HOST}/integrate/woocommerce?success=0&error=Request timeout`);
+		}, 5000)
 		const { store_url, email } = req.body;
 		const endpoint = '/wc-auth/v1/authorize';
 		const params = {
