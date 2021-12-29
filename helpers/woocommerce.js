@@ -20,10 +20,7 @@ const authorizeWoocommerceAccount = async (req, res, next) => {
 		console.table({URL})
 		const response = (await axios.get(URL)).data
 		console.log(response)
-		res.status(200).json({
-			success: true,
-			...response
-		});
+		res.redirect(303, URL);
 	} catch (err) {
 		console.error(err);
 		res.status(500).json({
