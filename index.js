@@ -7,10 +7,12 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 const db = require('./models/index');
 const { errorHandler } = require('./helpers/error');
+//routes
 const authRoutes = require('./routes/auth');
 const mainRoutes = require('./routes/main');
 const shopifyRoutes = require('./routes/shopify');
 const squareRoutes = require('./routes/square');
+const woocommerceRoutes = require('./routes/woocommerce')
 const paymentRoutes = require('./routes/payments');
 const stripeRoutes = require('./routes/stripe');
 const subscriptionRoutes = require('./routes/subscriptions');
@@ -48,7 +50,8 @@ app.use('/uploads', express.static('uploads'));
 app.use('/server/auth', authRoutes);
 app.use('/server/main', authenticateUser, mainRoutes); //TODO - Correct path for redux thunks in client-end
 app.use('/server/shopify', authenticateUser, shopifyRoutes);
-app.use('/server/square', squareRoutes)
+app.use('/server/square', authenticateUser, squareRoutes)
+app.use('/server/woocommerce', woocommerceRoutes)
 app.use('/server/payment', paymentRoutes);
 app.use('/server/subscription', subscriptionRoutes);
 
