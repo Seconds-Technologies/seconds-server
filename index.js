@@ -6,7 +6,11 @@ const logger = require('morgan');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const db = require('./models/index');
+const timeout = require('connect-timeout')
+//middleware
 const { errorHandler } = require('./helpers/error');
+const { authenticateUser } = require('./middleware/auth');
+const { wooCommerceTimeout } = require('./middleware');
 //routes
 const authRoutes = require('./routes/auth');
 const mainRoutes = require('./routes/main');
@@ -16,10 +20,10 @@ const woocommerceRoutes = require('./routes/woocommerce')
 const paymentRoutes = require('./routes/payments');
 const stripeRoutes = require('./routes/stripe');
 const subscriptionRoutes = require('./routes/subscriptions');
-const { authenticateUser } = require('./middleware/auth');
 
 const app = express();
 app.use(logger('dev'));
+app.use(timeout('5000ms'))
 
 const PORT = process.env.PORT || 8081;
 
@@ -51,7 +55,7 @@ app.use('/server/auth', authRoutes);
 app.use('/server/main', authenticateUser, mainRoutes); //TODO - Correct path for redux thunks in client-end
 app.use('/server/shopify', authenticateUser, shopifyRoutes);
 app.use('/server/square', authenticateUser, squareRoutes)
-app.use('/server/woocommerce', woocommerceRoutes)
+app.use('/server/woocommerce', wooCommerceTimeout, woocommerceRoutes)
 app.use('/server/payment', paymentRoutes);
 app.use('/server/subscription', subscriptionRoutes);
 
