@@ -15,14 +15,18 @@ const authorizeWoocommerceAccount = async (req, res, next) => {
 			callback_url: `${process.env.SERVER_HOST}/server/woocommerce`
 		};
 		const query_string = querystring.stringify(params).replace(/%20/g, '+');
-		console.table({query_string})
+		console.log("query params", query_string)
 		const URL = store_url + endpoint + '?' + query_string
-		console.table({URL})
+		console.log("URL:", URL)
 		const response = (await axios.get(URL)).data
 		console.log(response)
 		res.redirect(303, URL);
 	} catch (err) {
-		console.error("ERROR", err);
+		if (err.response){
+			console.log(err.response.data)
+		} else{
+			console.error("ERROR", err);
+		}
 		res.redirect(303, `${process.env.CLIENT_HOST}/integrate/woocommerce?success=0&error=${err.message}`);
 	}
 };
