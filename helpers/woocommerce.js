@@ -16,12 +16,16 @@ const authorizeWoocommerceAccount = async (req, res, next) => {
 			user_id: email,
 			return_url: `${process.env.CLIENT_HOST}/integrate/woocommerce`,
 			callback_url: `${process.env.SERVER_HOST}/server/woocommerce`
-		};
-		await db.User.findOneAndUpdate({ 'email': email }, { 'woocommerce.domain': store_url });
+		}
+		// trim off any trailing slashes
+		let domain = store_url.endsWith('/') ? store_url.slice(0, -1) : store_url;
+		// update the woocommerce domain within the db
+		await db.User.findOneAndUpdate({ 'email': email }, { 'woocommerce.domain': domain });
 		const query_string = querystring.stringify(params).replace(/%20/g, '+');
 		console.log('query params', query_string);
 		const URL = store_url + endpoint + '?' + query_string;
 		console.log('URL:', URL);
+		// redirect to the built auth woocommerce URL
 		res.redirect(303, URL);
 	} catch (err) {
 		if (err.response) {
@@ -42,13 +46,12 @@ const getCredentials = async (req, res) => {
 		}, { new: true });
 		console.log(user.woocommerce);
 		const URL = `${user['woocommerce'].domain}/wp-json/wc/v3/system_status`;
-		const { environment } = (await axios.get(URL, {
+		/*const { environment } = (await axios.get(URL, {
 			auth: {
 				username: consumer_key,
 				password: consumer_secret
 			}
-		})).data;
-		console.log(environment);
+		})).data;*/
 		res.status(200).json({
 			success: true,
 			...user.woocommerce
