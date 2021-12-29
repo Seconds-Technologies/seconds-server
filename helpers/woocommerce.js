@@ -39,10 +39,15 @@ const getCredentials = async (req, res) => {
 		const user = await db.User.findOneAndUpdate({ 'email': user_id }, {
 			'woocommerce.consumerKey': consumer_key,
 			'woocommerce.consumerSecret': consumer_secret
-		}, {new: true});
-		console.log(user.woocommerce)
+		}, { new: true });
+		console.log(user.woocommerce);
 		const URL = `${user['woocommerce'].domain}/wp-json/wc/v3/system_status`;
-		const { environment } = (await axios.get(URL)).data;
+		const { environment } = (await axios.get(URL, {
+			auth: {
+				username: consumer_key,
+				password: consumer_secret
+			}
+		})).data;
 		console.log(environment);
 		res.status(200).json({
 			success: true,
