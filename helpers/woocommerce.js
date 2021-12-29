@@ -27,7 +27,7 @@ const authorizeWoocommerceAccount = async (req, res, next) => {
 		} else{
 			console.error("ERROR", err);
 		}
-		res.redirect(303, `${process.env.CLIENT_HOST}/integrate/woocommerce?success=0&error=${err.message}`);
+		res.redirect(304, `${process.env.CLIENT_HOST}/integrate/woocommerce?success=0&error=${err.message}`);
 	}
 };
 
