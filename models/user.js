@@ -77,6 +77,12 @@ const userSchema = new mongoose.Schema({
 		state: String,
 		accessToken: String
 	},
+	woocommerce: {
+		consumerKey: String,
+		consumerSecret: String,
+		domain: String,
+		shopName: String
+	},
 	apiKey: {
 		type: String,
 		default: ''
