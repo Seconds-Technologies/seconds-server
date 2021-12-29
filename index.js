@@ -68,6 +68,7 @@ app.use((req, res, next) => {
 	next(err);
 });
 
+app.use(wooCommerceTimeout)
 app.use(errorHandler);
 
 app.listen(PORT, () => {
