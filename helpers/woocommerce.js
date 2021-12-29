@@ -5,14 +5,14 @@ const axios = require('axios');
 
 const authorizeWoocommerceAccount = async (req, res, next) => {
 	try {
-		const { store_url, email, callback_url } = req.body;
+		const { store_url, email } = req.body;
 		const endpoint = '/wc-auth/v1/authorize';
 		const params = {
 			app_name: 'Seconds',
 			scope: 'read',
 			user_id: email,
 			return_url: `${process.env.CLIENT_HOST}/integrate/woocommerce`,
-			callback_url
+			callback_url: `${process.env.SERVER_HOST}/server/woocommerce`
 		};
 		const query_string = querystring.stringify(params).replace(/%20/g, '+');
 		console.table({query_string})
