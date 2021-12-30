@@ -1,8 +1,9 @@
 const express = require("express");
-const { getCredentials, authorizeWoocommerceAccount } = require('../helpers/woocommerce');
+const { callback, getWooCommerceDetails, authorizeWoocommerceAccount } = require('../helpers/woocommerce');
 const router = express.Router();
 
-router.post('/', getCredentials)
+router.get('/', getWooCommerceDetails)
+router.post('/callback', callback)
 router.post("/authorize", authorizeWoocommerceAccount);
 
 module.exports = router;
