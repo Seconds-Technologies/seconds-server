@@ -37,6 +37,7 @@ const getWooCommerceDetails = async (req, res, next) => {
 	try {
 		let { email } = req.query
 		let { woocommerce } = await db.User.findOne({ email });
+		console.log(woocommerce)
 		if (woocommerce.consumerSecret || woocommerce.consumerKey) {
 			res.status(200).json({
 				...woocommerce,
