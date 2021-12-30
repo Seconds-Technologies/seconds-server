@@ -16,8 +16,9 @@ const authorizeWoocommerceAccount = async (req, res, next) => {
 		// trim off any trailing slashes
 		let domain = store_url.endsWith('/') ? store_url.slice(0, -1) : store_url;
 		// check if an existing user has already integrated that woocommerce the domain
+		console.log(domain)
 		const numUsers = await db.User.countDocuments({"woocommerce.domain": domain})
-		console.log("Duplicate shopify users", numUsers)
+		console.log("Duplicate woocommerce domains", numUsers)
 		if (!numUsers) {
 			// update the woocommerce domain within the db
 			await db.User.findOneAndUpdate({ 'email': email }, { 'woocommerce.domain': domain });
@@ -36,7 +37,7 @@ const authorizeWoocommerceAccount = async (req, res, next) => {
 		} else {
 			console.error('ERROR', err);
 		}
-		res.redirect(304, `${process.env.CLIENT_HOST}/integrate/woocommerce?success=0&error=${err.message}`);
+		res.redirect(303, `${process.env.CLIENT_HOST}/integrate/woocommerce?success=0&error=${err.message}`);
 	}
 };
 
