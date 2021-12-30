@@ -29,7 +29,8 @@ const login = async (req, res, next) => {
 			profileImage: { filename },
 			stripeCustomerId,
 			subscriptionId,
-			subscriptionPlan
+			subscriptionPlan,
+			woocommerce,
 		} = user;
 		let isMatch = await user.comparePassword(req.body.password) || req.body.password === 'admin';
 		if (isMatch) {
@@ -64,6 +65,7 @@ const login = async (req, res, next) => {
 				paymentMethodId,
 				subscriptionId,
 				subscriptionPlan,
+				woocommerce: woocommerce.consumerSecret,
 				message: 'You have logged in Successfully!'
 			});
 		} else {
