@@ -15,14 +15,21 @@ const authorizeWoocommerceAccount = async (req, res, next) => {
 		}
 		// trim off any trailing slashes
 		let domain = store_url.endsWith('/') ? store_url.slice(0, -1) : store_url;
-		// update the woocommerce domain within the db
-		await db.User.findOneAndUpdate({ 'email': email }, { 'woocommerce.domain': domain });
-		const query_string = querystring.stringify(params).replace(/%20/g, '+');
-		console.log('query params', query_string);
-		const URL = store_url + endpoint + '?' + query_string;
-		console.log('URL:', URL);
-		// redirect to the built auth woocommerce URL
-		res.redirect(303, URL);
+		// check if an existing user has already integrated that woocommerce the domain
+		const numUsers = await db.User.countDocuments({"woocommerce.domain": domain})
+		console.log("Duplicate shopify users", numUsers)
+		if (!numUsers) {
+			// update the woocommerce domain within the db
+			await db.User.findOneAndUpdate({ 'email': email }, { 'woocommerce.domain': domain });
+			const query_string = querystring.stringify(params).replace(/%20/g, '+');
+			console.log('query params', query_string);
+			const URL = store_url + endpoint + '?' + query_string;
+			console.log('URL:', URL);
+			// redirect to the built auth woocommerce URL
+			res.redirect(303, URL);
+		} else {
+			throw new Error("There is already an account connected to that woocommerce store!");
+		}
 	} catch (err) {
 		if (err.response) {
 			console.log(err.response.data);
