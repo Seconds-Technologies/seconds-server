@@ -5,25 +5,34 @@ const { v4: uuidv4 } = require('uuid');
 
 const connect = async (req, res, next) => {
 	try {
-		const { email } = req.query;
-		const { privateKey } = req.body;
-		const URL = 'https://api.squarespace.com/1.0/authorization/website';
-		const result = (await axios.get(URL, {
-			headers: {
-				'Authorization': 'Bearer ' + privateKey
-			}
-		})).data;
-		console.log(result);
-		// save information in the db
-		const squarespace = {
-			siteId: result.siteId,
-			domain: result.url,
-			secretKey: privateKey,
-			storeName: result.title
-		};
-		const user = await db.User.findOneAndUpdate({ 'email': email }, { 'squarespace': squarespace }, { new: true });
-		console.log(user.squarespace);
-		res.status(200).json(user.squarespace);
+		const { email, code, state } = req.query;
+		// find the user authorizing their squarespace account
+		const user = await db.User.findOne({ 'email': email });
+		console.log('State Received:', state);
+		console.log('State Stored:', user['squarespace'].state);
+		// verify that the state from the response matches that stored for the user
+		if (state !== user['squarespace'].state) {
+			throw new Error('Cannot verify the origin. Request authorization state does not match our records');
+		}
+		// use code to request an access token
+		console.log("Decoded code:", decodeURI(code))
+		const URL = "https://login.squarespace.com/api/1/login/oauth/provider/tokens"
+		const payload = {
+			grant_type: "authorization_code",
+			code: decodeURI(code),
+			redirect_uri: `${process.env.CLIENT_HOST}/integrate/squarespace`
+		}
+		const token = Buffer.from(`${process.env.SQUARESPACE_CLIENT_ID}:${process.env.SQUARESPACE_SECRET}`).toString('base64')
+		console.log("Base64 token", token)
+		const config = {
+			headers: { 'Authorization': `Basic ${token}`}
+		}
+		const response = (await axios.post(URL, payload, config)).data
+		console.log(response)
+		// store accessToken to squarespace field in user document
+		user.updateOne({"squarespace.accessToken": response.access_token, "squarespace.refreshToken": response.refresh_token})
+		await user.save()
+		res.status(200).json(response);
 	} catch (err) {
 		console.error(err);
 		res.status(500).json({ message: err.message });
