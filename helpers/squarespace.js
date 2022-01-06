@@ -30,7 +30,8 @@ const connect = async (req, res, next) => {
 		const response = (await axios.post(URL, payload, config)).data
 		console.log(response)
 		// store accessToken to squarespace field in user document
-		user.updateOne({"squarespace.accessToken": response.access_token, "squarespace.refreshToken": response.refresh_token})
+		user['squarespace'].accessToken = response.access_token
+		user['squarespace'].refreshToken = response.refresh_token
 		await user.save()
 		res.status(200).json(response);
 	} catch (err) {
