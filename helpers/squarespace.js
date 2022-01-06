@@ -41,8 +41,7 @@ const connect = async (req, res, next) => {
 
 const authorize = async (req, res) => {
 	try {
-		const { email } = req.query;
-		const { privateKey } = req.body;
+		const { email, privateKey } = req.body;
 		let state = uuidv4();
 		let URL = 'https://api.squarespace.com/1.0/authorization/website';
 		const result = (await axios.get(URL, {
