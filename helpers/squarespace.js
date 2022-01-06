@@ -54,7 +54,7 @@ const authorize = async (req, res) => {
 		const params = {
 			client_id: process.env.SQUARESPACE_CLIENT_ID,
 			redirect_uri: `${process.env.CLIENT_HOST}/integrate/squarespace`,
-			scope: 'website.orders, website.orders.read',
+			scope: 'website.orders,website.orders.read',
 			state,
 			access_type: 'offline'
 		};
