@@ -67,7 +67,7 @@ const login = async (req, res, next) => {
 				subscriptionId,
 				subscriptionPlan,
 				woocommerce: woocommerce.consumerSecret,
-				squarespace: squarespace.secretKey,
+				squarespace: squarespace.accessToken,
 				message: 'You have logged in Successfully!'
 			});
 		} else {
