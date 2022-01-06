@@ -63,7 +63,7 @@ const authorize = async (req, res) => {
 		// attach the initial squarespace credentials
 		const user = await db.User.findOneAndUpdate({ 'email': email }, {
 			'squarespace': {
-				siteId: result.siteId,
+				siteId: result.id,
 				storeName: result.title,
 				domain: result.url,
 				state
