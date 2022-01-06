@@ -85,6 +85,7 @@ const userSchema = new mongoose.Schema({
 	},
 	squarespace: {
 		accessToken: String,
+		refreshToken: String,
 		secretKey: String,
 		siteId: String,
 		domain: String,
