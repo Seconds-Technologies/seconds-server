@@ -3,6 +3,27 @@ const db = require('../models');
 const querystring = require('querystring');
 const { v4: uuidv4 } = require('uuid');
 
+const getCredentials = async (req, res, next) => {
+	try {
+		let { email } = req.query
+		let { squarespace } = await db.User.findOne({ email });
+		console.log(squarespace)
+		if (squarespace.accessToken || squarespace.refreshToken) {
+			res.status(200).json({
+				...squarespace,
+			});
+		} else {
+			throw new Error("This user has no squarespace account integrated");
+		}
+	} catch (err) {
+		console.error(err);
+		return next({
+			status: 404,
+			message: "Unable to retrieve squarespace details",
+		});
+	}
+}
+
 const connect = async (req, res, next) => {
 	try {
 		const { email, code, state } = req.query;
@@ -32,8 +53,8 @@ const connect = async (req, res, next) => {
 		// store accessToken to squarespace field in user document
 		user = await db.User.findOneAndUpdate({"email": email}, {
 			'squarespace.accessToken' : response.access_token,
-			'squarespace.accessTokenExpireTime' : response['access_token_expires_at'],
 			'squarespace.refreshToken' : response.refresh_token,
+			'squarespace.accessTokenExpireTime' : response['access_token_expires_at'],
 			'squarespace.refreshTokenExpireTime' : response['refresh_token_expires_at'],
 		}, {new: true})
 		/*user['squarespace'].accessToken = response.access_token
@@ -88,4 +109,4 @@ const authorize = async (req, res) => {
 	}
 };
 
-module.exports = { connect, authorize };
+module.exports = { getCredentials, connect, authorize };

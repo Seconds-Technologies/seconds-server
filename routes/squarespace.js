@@ -1,8 +1,9 @@
 const express = require("express");
-const { connect, authorize } = require('../helpers/squarespace');
+const { getCredentials, connect, authorize } = require('../helpers/squarespace');
 const router = express.Router();
 
-router.get('/', connect)
+router.get('/', getCredentials)
+router.get('/connect', connect)
 router.post('/authorize', authorize)
 
 module.exports = router;
