@@ -55,6 +55,7 @@ const authorize = async (req, res) => {
 		const user = await db.User.findOneAndUpdate({ 'email': email }, {
 			'squarespace': {
 				siteId: result.siteId,
+				storeName: result.title,
 				domain: result.url,
 				state
 			}
