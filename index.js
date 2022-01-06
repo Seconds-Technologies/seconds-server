@@ -57,7 +57,7 @@ app.use('/uploads', express.static('uploads'));
 app.use('/server/auth', authRoutes);
 app.use('/server/main', authenticateUser, mainRoutes); //TODO - Correct path for redux thunks in client-end
 app.use('/server/shopify', authenticateUser, shopifyRoutes);
-app.use('/server/square', authenticateUser, squareRoutes)
+app.use('/server/square', squareRoutes)
 app.use('/server/woocommerce', wooCommerceTimeout, woocommerceRoutes)
 app.use('/server/squarespace', squarespaceRoutes)
 app.use('/server/payment', paymentRoutes);

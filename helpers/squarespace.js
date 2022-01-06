@@ -7,7 +7,7 @@ const connect = async (req, res, next) => {
 	try {
 		const { email, code, state } = req.query;
 		// find the user authorizing their squarespace account
-		const user = await db.User.findOne({ 'email': email });
+		let user = await db.User.findOne({ 'email': email });
 		console.log('State Received:', state);
 		console.log('State Stored:', user['squarespace'].state);
 		// verify that the state from the response matches that stored for the user
@@ -30,10 +30,19 @@ const connect = async (req, res, next) => {
 		const response = (await axios.post(URL, payload, config)).data
 		console.log(response)
 		// store accessToken to squarespace field in user document
-		user['squarespace'].accessToken = response.access_token
+		user = await db.User.findOneAndUpdate({"email": email}, {
+			'squarespace.accessToken' : response.access_token,
+			'squarespace.accessTokenExpireTime' : response['access_token_expires_at'],
+			'squarespace.refreshToken' : response.refresh_token,
+			'squarespace.refreshTokenExpireTime' : response['refresh_token_expires_at'],
+		}, {new: true})
+		/*user['squarespace'].accessToken = response.access_token
+		user['squarespace'].accessTokenExpireTime = response['access_token_expires_at']
 		user['squarespace'].refreshToken = response.refresh_token
+		user['squarespace'].refreshTokenExpireTime = response['refresh_token_expires_at']
 		await user.save()
-		res.status(200).json(response);
+		*/
+		res.status(200).json(user['squarespace']);
 	} catch (err) {
 		console.error(err);
 		res.status(500).json({ message: err.message });
