@@ -87,6 +87,7 @@ const userSchema = new mongoose.Schema({
 		accessToken: String,
 		refreshToken: String,
 		secretKey: String,
+		state: String,
 		siteId: String,
 		domain: String,
 		storeName: String
