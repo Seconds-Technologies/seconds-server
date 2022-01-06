@@ -83,6 +83,13 @@ const userSchema = new mongoose.Schema({
 		domain: String,
 		shopName: String
 	},
+	squarespace: {
+		accessToken: String,
+		secretKey: String,
+		siteId: String,
+		domain: String,
+		storeName: String
+	},
 	apiKey: {
 		type: String,
 		default: ''

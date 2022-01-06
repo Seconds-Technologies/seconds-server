@@ -17,6 +17,7 @@ const mainRoutes = require('./routes/main');
 const shopifyRoutes = require('./routes/shopify');
 const squareRoutes = require('./routes/square');
 const woocommerceRoutes = require('./routes/woocommerce')
+const squarespaceRoutes = require('./routes/squarespace')
 const paymentRoutes = require('./routes/payments');
 const stripeRoutes = require('./routes/stripe');
 const subscriptionRoutes = require('./routes/subscriptions');
@@ -58,6 +59,7 @@ app.use('/server/main', authenticateUser, mainRoutes); //TODO - Correct path for
 app.use('/server/shopify', authenticateUser, shopifyRoutes);
 app.use('/server/square', authenticateUser, squareRoutes)
 app.use('/server/woocommerce', wooCommerceTimeout, woocommerceRoutes)
+app.use('/server/squarespace', squarespaceRoutes)
 app.use('/server/payment', paymentRoutes);
 app.use('/server/subscription', subscriptionRoutes);
 

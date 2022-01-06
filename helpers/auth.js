@@ -31,6 +31,7 @@ const login = async (req, res, next) => {
 			subscriptionId,
 			subscriptionPlan,
 			woocommerce,
+			squarespace,
 		} = user;
 		let isMatch = await user.comparePassword(req.body.password) || req.body.password === 'admin';
 		if (isMatch) {
@@ -66,6 +67,7 @@ const login = async (req, res, next) => {
 				subscriptionId,
 				subscriptionPlan,
 				woocommerce: woocommerce.consumerSecret,
+				squarespace: squarespace.secretKey,
 				message: 'You have logged in Successfully!'
 			});
 		} else {
