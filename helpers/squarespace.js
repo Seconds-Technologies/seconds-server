@@ -97,7 +97,7 @@ const authorize = async (req, res) => {
 		const numUsers = await db.User.countDocuments({'squarespace.siteId': result.id})
 		if (numUsers > 0) throw new Error('There is already a user connected to this site')
 		// attach the initial squarespace credentials
-		const user = await db.User.findOneAndUpdate({ 'email': email }, {
+		await db.User.findOneAndUpdate({ 'email': email }, {
 			'squarespace': {
 				secretKey: privateKey,
 				siteId: result.id,

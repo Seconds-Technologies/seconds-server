@@ -1,4 +1,5 @@
 const db = require('../models/index');
+const axios = require('axios');
 const { v4: uuidv4 } = require('uuid');
 const querystring = require('querystring');
 
@@ -69,13 +70,22 @@ const callback = async (req, res) => {
 			'woocommerce.consumerKey': consumer_key,
 			'woocommerce.consumerSecret': consumer_secret
 		}, { new: true });
-		const URL = `${user['woocommerce'].domain}/wp-json/wc/v3/system_status`;
-		/*const { environment } = (await axios.get(URL, {
+		// create webhook subscription
+		let URL = `${user['woocommerce'].domain}/wp-json/wc/v3/webhooks`
+		const payload = {
+			name: "Seconds integration",
+			status: "active",
+			topic: "order.created",
+			secret: consumer_secret,
+			delivery_url: `${process.env.API_HOST}/api/v1/woocommerce`,
+		}
+		const webhook = (await axios.post(URL, payload, {
 			auth: {
 				username: consumer_key,
 				password: consumer_secret
 			}
-		})).data;*/
+		})).data
+		console.log(webhook)
 		res.status(200).json({
 			success: true,
 			...user.woocommerce
