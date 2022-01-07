@@ -93,6 +93,9 @@ const authorize = async (req, res) => {
 			}
 		})).data;
 		console.log(result);
+		// check if the squarespace store is not connected to an existing user
+		const numUsers = await db.User.countDocuments({'squarespace.siteId': result.id})
+		if (numUsers > 0) throw new Error('There is already a user connected to this site')
 		// attach the initial squarespace credentials
 		const user = await db.User.findOneAndUpdate({ 'email': email }, {
 			'squarespace': {
@@ -119,6 +122,8 @@ const authorize = async (req, res) => {
 		res.redirect(303, URL);
 	} catch (err) {
 		console.error(err);
+		const URL = `${process.env.CLIENT_HOST}/integrate/squarespace?error=${err.message}`
+		res.redirect(303, URL)
 	}
 };
 
