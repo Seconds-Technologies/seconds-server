@@ -29,27 +29,39 @@ const connect = async (req, res, next) => {
 		const { email, code, state } = req.query;
 		// find the user authorizing their squarespace account
 		let user = await db.User.findOne({ 'email': email });
-		console.log('State Received:', state);
-		console.log('State Stored:', user['squarespace'].state);
 		// verify that the state from the response matches that stored for the user
 		if (state !== user['squarespace'].state) {
 			throw new Error('Cannot verify the origin. Request authorization state does not match our records');
 		}
-		// use code to request an access token
+		// use code to request access token
 		console.log("Decoded code:", decodeURI(code))
-		const URL = "https://login.squarespace.com/api/1/login/oauth/provider/tokens"
-		const payload = {
+		let URL = "https://login.squarespace.com/api/1/login/oauth/provider/tokens"
+		let payload = {
 			grant_type: "authorization_code",
 			code: decodeURI(code),
 			redirect_uri: `${process.env.CLIENT_HOST}/integrate/squarespace`
 		}
 		const token = Buffer.from(`${process.env.SQUARESPACE_CLIENT_ID}:${process.env.SQUARESPACE_SECRET}`).toString('base64')
 		console.log("Base64 token", token)
-		const config = {
+		let config = {
 			headers: { 'Authorization': `Basic ${token}`}
 		}
+		// make request to fetch squarespace Oauth credentials
 		const response = (await axios.post(URL, payload, config)).data
 		console.log(response)
+		// make request to create webhook subscription for the squarespace store
+		URL = "https://api.squarespace.com/1.0/webhook_subscriptions"
+		payload = {
+			endpointUrl: `${process.env.API_HOST}/api/v1/squarespace`,
+			topics: ["order.create"]
+		}
+		config = {
+			headers: {
+				'Authorization': `Bearer ${response.access_token}`
+			}
+		}
+		const webhook = (await axios.post(URL, payload, config)).data
+		console.log(webhook)
 		// store accessToken to squarespace field in user document
 		user = await db.User.findOneAndUpdate({"email": email}, {
 			'squarespace.accessToken' : response.access_token,
