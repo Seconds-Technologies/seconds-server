@@ -9,7 +9,7 @@ const authorizeWoocommerceAccount = async (req, res, next) => {
 		const endpoint = '/wc-auth/v1/authorize';
 		const params = {
 			app_name: 'Seconds',
-			scope: 'read',
+			scope: 'read_write',
 			user_id: email,
 			return_url: `${process.env.CLIENT_HOST}/integrate/woocommerce`,
 			callback_url: `${process.env.SERVER_HOST}/server/woocommerce/callback`
