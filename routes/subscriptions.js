@@ -62,7 +62,7 @@ router.post("/cancel-subscription", async (req, res) => {
 })
 
 router.post('/create-checkout-session', async (req, res) => {
-	const { lookup_key, stripe_customer_id } = req.body;
+	const { lookup_key, stripe_customer_id, onboarding } = req.body;
 	console.log("--------------------------------------")
 	console.log("LOOKUP KEY:", lookup_key)
 	console.log("--------------------------------------")
@@ -71,6 +71,10 @@ router.post('/create-checkout-session', async (req, res) => {
 		expand: ['data.product'],
 	});
 	console.log(prices)
+	/* ******************************************************** */
+	let success_url = onboarding ? `${String(process.env.CLIENT_HOST)}/signup/3/payment?success=true&session_id={CHECKOUT_SESSION_ID}`: `${String(process.env.CLIENT_HOST)}/subscription/payment?success=true&session_id={CHECKOUT_SESSION_ID}`
+	let cancel_url = onboarding ? `${String(process.env.CLIENT_HOST)}/signup/3/payment?canceled=true` : `${String(process.env.CLIENT_HOST)}/subscription/payment?canceled=true`
+	/* ******************************************************** */
 	const session = await stripe.checkout.sessions.create({
 		customer: stripe_customer_id,
 		billing_address_collection: 'auto',
@@ -88,23 +92,24 @@ router.post('/create-checkout-session', async (req, res) => {
 		subscription_data: {
 			trial_end: moment().add(1, "month").unix(),
 		},
-		success_url: `${String(process.env.CLIENT_HOST)}/subscription/payment?success=true&session_id={CHECKOUT_SESSION_ID}`,
-		cancel_url: `${String(process.env.CLIENT_HOST)}/subscription/payment?canceled=true`,
+		success_url,
+		cancel_url
 	});
 	res.redirect(303, session.url)
 });
 
 router.post('/create-portal-session', async (req, res) => {
 	console.log(req.body)
-	const { stripe_customer_id } = req.body;
+	const { onboarding, stripe_customer_id } = req.body;
 	console.log("--------------------------------------")
 	console.log("CUSTOMER ID:", stripe_customer_id)
 	console.log("--------------------------------------")
+	let return_url = onboarding ? `${String(process.env.CLIENT_HOST)}/signup/3` : `${String(process.env.CLIENT_HOST)}/subscription`
 	// managing their billing with the portal.
 	const portalSession = await stripe.billingPortal.sessions.create({
 		customer: stripe_customer_id,
 		// This is the url to which the customer will be redirected when they are done
-		return_url: `${String(process.env.CLIENT_HOST)}/subscription`
+		return_url
 	});
 	console.log("------------------------------")
 	console.log(portalSession)
