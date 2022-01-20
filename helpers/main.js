@@ -172,6 +172,7 @@ const synchronizeUserInfo = async (req, res, next) => {
 			subscriptionId,
 			subscriptionPlan
 		} = await db.User.findOne({ 'email': EMAIL });
+		console.table({subscriptionId, subscriptionPlan})
 		res.status(200).json({
 			id: _id,
 			firstname,
