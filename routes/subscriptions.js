@@ -29,16 +29,18 @@ router.post("/setup-subscription", async (req, res) => {
 
 router.post("/fetch-stripe-subscription", async (req, res) => {
 	const { email } = req.body;
-	console.log(email)
 	try {
-		const { subscriptionId } = await db.User.findOne({"email": email}, {})
-		if (subscriptionId){
+		const user = await db.User.findOne({"email": email})
+		console.log(user['subscriptionId'], user['subscriptionPlan'])
+		if (user['subscriptionId']){
 			const subscription = await stripe.subscriptions.retrieve(
-				subscriptionId
+				user['subscriptionId']
 			);
 			console.log(subscription)
+			res.status(200).json({id: subscription.id, status: subscription.status})
+		} else {
+			res.status(200).json({ id: "", status: null })
 		}
-		res.status(200).json({id: subscriptionId, status: null})
 	} catch (e) {
 		console.error(e)
 		res.status(400).json({
