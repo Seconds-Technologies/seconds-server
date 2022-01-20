@@ -27,8 +27,8 @@ router.post("/setup-subscription", async (req, res) => {
 	}
 })
 
-router.post("/fetch-stripe-subscription", async (req, res) => {
-	const { email } = req.body;
+router.get("/fetch-stripe-subscription", async (req, res) => {
+	const { email } = req.query;
 	try {
 		const user = await db.User.findOne({"email": email})
 		console.log(user['subscriptionId'], user['subscriptionPlan'])
