@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 
 const {
-	validateShopify,
+	connectShopify,
 	getOrderCount,
 	getShopifyProducts,
 	getShopifyDetails,
@@ -14,7 +14,7 @@ const {
 } = require("../helpers/shopify");
 
 router.post("/", getShopifyDetails)
-router.post("/validate", validateShopify);
+router.post("/connect", connectShopify);
 router.post("/count-orders", getOrderCount);
 router.post("/all-products", getShopifyProducts);
 router.post("/product-image", getProductImage);
