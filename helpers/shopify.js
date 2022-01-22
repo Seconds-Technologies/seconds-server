@@ -27,7 +27,7 @@ exports.connectShopify = async (req, res, next) => {
 					format: 'json'
 				}
 			};
-			const webhook = await axios.post(`${myshopify_domain}/admin/api/2021-10/webhooks.json`, payload, { headers: { 'X-Shopify-Access-Token': password } });
+			const webhook = await axios.post(`https://${myshopify_domain}/admin/api/2021-10/webhooks.json`, payload, { headers: { 'X-Shopify-Access-Token': password } });
 			console.log("---------------------------------------")
 			console.log(webhook)
 			console.log("---------------------------------------")
