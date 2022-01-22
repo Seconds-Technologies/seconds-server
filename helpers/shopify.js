@@ -56,7 +56,10 @@ exports.connectShopify = async (req, res, next) => {
 		}
 	} catch (err) {
 		console.error(err);
-		return next({
+		return err.status === 404 ? next({
+			status: 404,
+			message: 'Please check your shopify credentials and try again'
+		}) : next({
 			status: 401,
 			message: err.message
 		});
