@@ -10,11 +10,7 @@ exports.connectShopify = async (req, res, next) => {
 		const URL = `https://${apiKey}:${password}@${shopName}.myshopify.com/admin/api/2021-10/shop.json`;
 		//const buff = Buffer.from(`${apiKey}:${password}`, 'utf-8');
 		// const authToken = String("Basic " + buff.toString('base64'));
-		const {
-			data: {
-				shop: { id, myshopify_domain, country, shop_owner }
-			}
-		} = await axios.get(URL);
+		const {shop: { id, myshopify_domain, country, shop_owner }} = (await axios.get(URL)).data;
 		//check if a user has an account integrated with this shopify account already
 		const numUsers = await db.User.where({ 'shopify.shopId': id }).countDocuments();
 		console.log('Duplicate shopify users:', numUsers);
@@ -27,7 +23,7 @@ exports.connectShopify = async (req, res, next) => {
 					format: 'json'
 				}
 			};
-			const webhook = await axios.post(`https://${myshopify_domain}/admin/api/2021-10/webhooks.json`, payload, { headers: { 'X-Shopify-Access-Token': password } });
+			const webhook = (await axios.post(`https://${myshopify_domain}/admin/api/2021-10/webhooks.json`, payload, { headers: { 'X-Shopify-Access-Token': password } })).data;
 			console.log("---------------------------------------")
 			console.log(webhook)
 			console.log("---------------------------------------")
