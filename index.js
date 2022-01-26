@@ -18,6 +18,7 @@ const shopifyRoutes = require('./routes/shopify');
 const squareRoutes = require('./routes/square');
 const woocommerceRoutes = require('./routes/woocommerce')
 const squarespaceRoutes = require('./routes/squarespace')
+const hubriseRoutes = require('./routes/hubrise')
 const paymentRoutes = require('./routes/payments');
 const stripeRoutes = require('./routes/stripe');
 const subscriptionRoutes = require('./routes/subscriptions');
@@ -60,6 +61,7 @@ app.use('/server/shopify', authenticateUser, shopifyRoutes);
 app.use('/server/square', squareRoutes)
 app.use('/server/woocommerce', wooCommerceTimeout, woocommerceRoutes)
 app.use('/server/squarespace', squarespaceRoutes)
+app.use('/server/hubrise', hubriseRoutes)
 app.use('/server/payment', paymentRoutes);
 app.use('/server/subscription', subscriptionRoutes);
 

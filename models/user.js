@@ -93,6 +93,11 @@ const userSchema = new mongoose.Schema({
 		domain: String,
 		storeName: String
 	},
+	hubrise: {
+		clientId: String,
+		clientSecret: String,
+		authCode: String,
+	},
 	apiKey: {
 		type: String,
 		default: ''
@@ -227,15 +232,26 @@ const userSchema = new mongoose.Schema({
 
 userSchema.pre('save', async function (next) {
 	try {
-		if (!this.isModified('password')) {
-			return next();
+		if (this.isModified('password')) {
+			this.password = await bcrypt.hash(this.password, 10);
 		}
-		this.password = await bcrypt.hash(this.password, 10);
+		/*if (this.isModified('apiKey')) {
+			this.apiKey = await bcrypt.hash(this.apiKey, 10);
+		}*/
 		return next();
 	} catch (err) {
 		return next(err);
 	}
 });
+
+userSchema.methods.compareApiKey = async function (candidateApiKey, next) {
+	try {
+		return await bcrypt.compare(candidateApiKey, this.password);
+	} catch (err) {
+		console.error(err);
+		return next(err);
+	}
+}
 
 userSchema.methods.comparePassword = async function (candidatePassword, next) {
 	try {
