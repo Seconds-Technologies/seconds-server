@@ -1,7 +1,7 @@
 const Mixpanel = require('mixpanel');
 const mixpanel = Mixpanel.init(process.env.MIXPANEL_TOKEN, { host: 'api-eu.mixpanel.com' });
 
-let env_check = process.env.MIXPANEL_ENV === 'production' || process.env.MIXPANEL_ENV === 'staging';
+let env_check = process.env.NODE_ENV === 'production'
 console.log(env_check)
 
 let actions = {
