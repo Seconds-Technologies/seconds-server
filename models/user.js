@@ -98,6 +98,7 @@ const userSchema = new mongoose.Schema({
 		clientSecret: String,
 		accessToken: String,
 		locationId: String,
+		locationName: String,
 		accountName: String
 	},
 	apiKey: {
