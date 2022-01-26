@@ -51,13 +51,13 @@ router.get('/connect', async (req, res) => {
 		const user = await db.User.findOne({ email: email }, { hubrise: 1 });
 		console.log(user);
 		// use credentials to retrieve hubrise access token
-		const URL = 'https://manager.hubrise.com/oauth2/v1/token';
+		let URL = 'https://manager.hubrise.com/oauth2/v1/token';
 		const params = {
 			code,
 			client_id: user['hubrise'].clientId,
 			client_secret: user['hubrise'].clientSecret
 		};
-		const result = (await axios.post(URL, null, { params })).data;
+		let result = (await axios.post(URL, null, { params })).data;
 		console.log(result);
 		// append access token + location_id to hubrise property of the user document
 		user['hubrise'].accessToken = result.access_token;
@@ -66,6 +66,20 @@ router.get('/connect', async (req, res) => {
 		user['hubrise'].accountName = result.account_name;
 		await user.save();
 		// create webhook subscription
+		URL = 'https://api.hubrise.com/v1/callback';
+		const payload = {
+			"url": `${process.env.API_HOST}/hubrise`,
+			"events": {
+				"order": ["create"]
+			}
+		}
+		const config = {
+			headers: {
+				'X-Access-Token': result.access_token
+			}
+		};
+		const webhook = (await axios.post(URL, payload, config)).data;
+		console.log(webhook);
 		res.status(200).json(user['hubrise']);
 	} catch (err) {
 		if (err.response) {
