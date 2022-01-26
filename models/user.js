@@ -96,7 +96,9 @@ const userSchema = new mongoose.Schema({
 	hubrise: {
 		clientId: String,
 		clientSecret: String,
-		authCode: String,
+		accessToken: String,
+		locationId: String,
+		accountName: String
 	},
 	apiKey: {
 		type: String,
