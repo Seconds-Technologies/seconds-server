@@ -3,6 +3,25 @@ const db = require('../models');
 const axios = require('axios');
 const router = express.Router();
 
+router.get('/', async (req, res, next) => {
+	try {
+		const { email } = req.query;
+	    const { hubrise } = await db.User.findOne({ email });
+		console.log(hubrise)
+		if (hubrise.accessToken) {
+			res.status(200).json(hubrise);
+		} else {
+			throw new Error("This user has no hubrise account integrated");
+		}
+	} catch (err) {
+		console.error(err);
+		return next({
+			status: 404,
+			message: "Unable to retrieve hubrise details",
+		});
+	}
+})
+
 router.post('/authorize', async (req, res) => {
 	try {
 		const { clientId, clientSecret, email } = req.body;
