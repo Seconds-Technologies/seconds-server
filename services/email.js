@@ -13,7 +13,7 @@ const sendEmail = async options => {
 		...(options.templateData && { dynamicTemplateData: options.templateData })
 	};
 	// 3) Actually send the email
-	process.env.ENVIRONMENT_MODE === "live" && await sgMail.send(msg);
+	process.env.NODE_ENV === 'production' && await sgMail.send(msg);
 };
 
 module.exports = sendEmail;

@@ -261,7 +261,7 @@ const sendPasswordResetEmail = async (req, res) => {
 		// send it to the user
 		const resetURL = `${process.env.CLIENT_HOST}/reset?token=${resetToken}`;
 		console.log(resetURL);
-		const message = `Forgot your password? Submit a PATCH request with your new password to: \n\n${resetURL}
+		const message = `Forgot your password? Click the link below generate a new one: \n\n${resetURL}
 		\nIf you didn't forget your password, please ignore this email!`;
 		try {
 			await sendEmail({
