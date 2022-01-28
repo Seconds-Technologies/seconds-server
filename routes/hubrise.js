@@ -30,7 +30,6 @@ router.post('/authorize', async (req, res) => {
 		const user = await db.User.findOne({ email });
 		if (user) {
 			const params = {
-				device_id: moment().unix(),
 				redirect_uri: `${process.env.CLIENT_HOST}/integrate/hubrise`,
 				client_id: `${process.env.HUBRISE_CLIENT_ID}`,
 				scope: `${process.env.HUBRISE_SCOPES}`,
