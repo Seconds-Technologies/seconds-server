@@ -94,12 +94,15 @@ const userSchema = new mongoose.Schema({
 		storeName: String
 	},
 	hubrise: {
-		clientId: String,
-		clientSecret: String,
+		accountName: String,
 		accessToken: String,
-		locationId: String,
 		locationName: String,
-		accountName: String
+		locationId: String,
+		customerListName: String,
+		customerListId: String,
+		catalogName: String,
+		catalogId: String,
+		catalog: []
 	},
 	apiKey: {
 		type: String,
