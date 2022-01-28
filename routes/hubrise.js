@@ -2,6 +2,7 @@ const express = require('express');
 const db = require('../models');
 const axios = require('axios');
 const querystring = require('querystring');
+const moment = require('moment');
 const router = express.Router();
 
 router.get('/', async (req, res, next) => {
@@ -29,6 +30,7 @@ router.post('/authorize', async (req, res) => {
 		const user = await db.User.findOne({ email });
 		if (user) {
 			const params = {
+				device_id: moment().unix(),
 				redirect_uri: `${process.env.CLIENT_HOST}/integrate/hubrise`,
 				client_id: `${process.env.HUBRISE_CLIENT_ID}`,
 				scope: `${process.env.HUBRISE_SCOPES}`,
@@ -87,7 +89,7 @@ router.get('/connect', async (req, res) => {
 		const payload = {
 			"url": `${process.env.API_HOST}/hubrise`,
 			"events": {
-				"order": ["create"]
+				"order": ["create", "update"]
 			}
 		}
 		let config = {
@@ -95,7 +97,7 @@ router.get('/connect', async (req, res) => {
 				'X-Access-Token': result.access_token
 			}
 		};
-		const webhook = (await axios.post(URL, payload, config)).data;
+		const webhook = process.env.NODE_ENV === 'production' ? (await axios.post(URL, payload, config)).data : null
 		console.log("--------------------------")
 		console.log("Hubrise Webhook")
 		console.table(webhook);
@@ -124,7 +126,7 @@ router.patch('/disconnect', async(req, res, next) => {
 			'hubrise.catalogId': undefined,
 			'hubrise.customerListName': undefined,
 			'hubrise.customerListId': undefined
-		}, {new: true});
+		}, { new: true });
 		if (user) {
 			console.log(user['hubrise'])
 			return res.status(200).json({ message: "Hubrise account has been disconnected" })
