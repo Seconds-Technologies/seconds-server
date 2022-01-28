@@ -69,7 +69,9 @@ router.get('/connect', async (req, res) => {
 			client_secret: process.env.HUBRISE_CLIENT_SECRET
 		};
 		let result = (await axios.post(URL, null, { params })).data;
-		console.log(result);
+		console.log("--------------------------")
+		console.log("Account Credentials")
+		console.table(result);
 		// append access token + location_id to hubrise property of the user document
 		user['hubrise'].accessToken = result.access_token;
 		user['hubrise'].accountName = result.account_name;
@@ -88,13 +90,17 @@ router.get('/connect', async (req, res) => {
 				"order": ["create"]
 			}
 		}
-		const config = {
+		let config = {
 			headers: {
 				'X-Access-Token': result.access_token
 			}
 		};
 		const webhook = (await axios.post(URL, payload, config)).data;
-		console.log(webhook);
+		console.log("--------------------------")
+		console.log("Hubrise Webhook")
+		console.table(webhook);
+		console.log("--------------------------")
+		// set access_token to postman header
 		res.status(200).json(user['hubrise']);
 	} catch (err) {
 		if (err.response) {
@@ -105,5 +111,36 @@ router.get('/connect', async (req, res) => {
 		res.status(500).json({ message: err.message });
 	}
 });
+
+router.patch('/disconnect', async(req, res, next) => {
+	try {
+		const { email } = req.body;
+		const user = await db.User.findOneAndUpdate({ email: email }, {
+			'hubrise.accessToken': undefined,
+			'hubrise.accountName': undefined,
+			'hubrise.locationName': undefined,
+			'hubrise.locationId': undefined,
+			'hubrise.catalogName': undefined,
+			'hubrise.catalogId': undefined,
+			'hubrise.customerListName': undefined,
+			'hubrise.customerListId': undefined
+		}, {new: true});
+		if (user) {
+			console.log(user['hubrise'])
+			return res.status(200).json({ message: "Hubrise account has been disconnected" })
+		} else {
+			let error = new Error(`User with email ${email} could not be found`)
+			error.status = 404
+			throw error
+		}
+	} catch (err) {
+		if (err.response) {
+			console.log(err.response.data);
+		} else {
+			console.error('ERROR', err);
+		}
+		res.status(500).json({ message: err.message });
+	}
+})
 
 module.exports = router;
