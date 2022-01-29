@@ -95,6 +95,7 @@ const userSchema = new mongoose.Schema({
 	},
 	hubrise: {
 		accountName: String,
+		accountId: String,
 		accessToken: String,
 		locationName: String,
 		locationId: String,
