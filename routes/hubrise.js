@@ -5,7 +5,7 @@ const querystring = require('querystring');
 const moment = require('moment');
 const router = express.Router();
 
-const BASE_URL = "https://api.hubrise.com"
+const BASE_URL = "https://api.hubrise.com/v1/"
 
 router.get('/', async (req, res, next) => {
 	try {
