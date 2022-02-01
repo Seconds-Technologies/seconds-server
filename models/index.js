@@ -9,3 +9,4 @@ mongoose.connect(process.env.MONGODB_URI || "mongodb://localhost:27017/seconds",
 
 module.exports.User = mongoose.model('User', require("./user"));
 module.exports.PostCode = mongoose.model("Postcode", require("./region"));
+module.exports.Catalog = mongoose.model('Catalog', require("./catalog"));

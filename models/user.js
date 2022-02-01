@@ -2,8 +2,8 @@ const mongoose = require('mongoose');
 const crypto = require('crypto');
 const bcrypt = require('bcrypt');
 const moment = require('moment');
-const { deliveryHoursSchema } = require('./deliveryHoursSchema');
-const addressSchema = require('./addressSchema');
+const { deliveryHoursSchema } = require('./schemas/deliveryHoursSchema');
+const addressSchema = require('./schemas/addressSchema');
 
 const userSchema = new mongoose.Schema({
 	email: {
@@ -103,7 +103,6 @@ const userSchema = new mongoose.Schema({
 		customerListId: String,
 		catalogName: String,
 		catalogId: String,
-		catalog: []
 	},
 	apiKey: {
 		type: String,

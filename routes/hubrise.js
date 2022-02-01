@@ -5,7 +5,7 @@ const querystring = require('querystring');
 const moment = require('moment');
 const router = express.Router();
 
-const BASE_URL = "https://api.hubrise.com/v1"
+const BASE_URL = 'https://api.hubrise.com/v1';
 
 router.get('/', async (req, res, next) => {
 	try {
@@ -150,28 +150,100 @@ router.patch('/disconnect', async (req, res, next) => {
 	}
 });
 
-router.get('/catalogs', async (req, res) => {
+router.get('/pull-catalog', async (req, res) => {
 	try {
 		const { email } = req.query;
-		const user = await db.User.findOne({ email })
-		console.log("USER:", !!user)
-		const CATALOGS = []
+		const user = await db.User.findOne({ email });
+		console.log('USER:', !!user);
+		let CATALOG;
+		const HUBRISE_CATALOGS = [];
 		if (user) {
-			let { locationId, accountId } = user['hubrise'];
-			const locationEndpoint = `/locations/${locationId}/catalogs`
-			// const accountEndpoint = `/accounts/${accountId}/catalogs`
-			const locationURL = BASE_URL + locationEndpoint
-			console.table({locationURL})
-			// const accountURL = BASE_URL + accountEndpoint
+			let { locationId } = user['hubrise'];
+			const locationEndpoint = `/locations/${locationId}/catalogs`;
+			const locationURL = BASE_URL + locationEndpoint;
+			console.table({ locationURL });
 			const config = {
 				headers: {
 					'X-Access-Token': user['hubrise'].accessToken
 				}
-			}
+			};
 			// fetch catalogs under the connected hubrise location
-			let catalogs = await axios.get(locationURL, config)
-			console.log(catalogs)
-			res.status(200).json({ message: "Catalogs found" })
+			let catalogs = (await axios.get(locationURL, config)).data;
+			console.log('LOCATION:', catalogs);
+			console.log('-----------------------------------------');
+			// check if there are any catalogs listed, if there are find the with matching location ID and retrieve it
+			// if not skip and search for account level catalogs
+			if (catalogs.length) {
+				let catalogRef = catalogs.find(({ location_id }) => location_id === locationId);
+				let URL = BASE_URL + `/catalogs/${catalogRef.id}`;
+				const catalog = (await axios.get(URL, config)).data;
+				console.log(catalog);
+				HUBRISE_CATALOGS.push(catalog);
+			}
+			// push catalogs into the database
+			await Promise.all(
+				HUBRISE_CATALOGS.map(async ({ id, name, data, location_id }) => {
+					let categories = data.categories.map(({ id, name, ref, description, parent_ref, tags }) => ({
+						categoryId: id,
+						name,
+						ref,
+						description,
+						parentRef: parent_ref,
+						tags
+					}));
+					let products = data.products.map(({ name, description, skus, category_id, tags, ref }, index) => {
+						console.log(`PRODUCT: #${index}`);
+						//console.table({ id, name, description, skus, category_ref, tags, ref });
+						let variants = skus.map(
+							({ id, name, product_id, price, ref, tags, option_list_ids }, index) => {
+								console.log(`VARIANT: #${index}`);
+								/*console.table({
+									id,
+									name,
+									product_id,
+									price: Number(price.split(' ')[0]).toFixed(2),
+									ref,
+									tags,
+									option_list_ids
+								});*/
+								return {
+									variantId: id,
+									name,
+									price: Number(price.split(' ')[0]).toFixed(2),
+									ref,
+									productId: product_id,
+									tags,
+									options: option_list_ids
+								};
+							}
+						);
+						return {
+							productId: id,
+							name,
+							description,
+							categoryId: category_id,
+							tags,
+							variants
+						};
+						// for each product, store the sku id, product id, sku name, product name, categoryRef, description
+					});
+					const catalog = {
+						clientId: user['_id'],
+						locationId: location_id,
+						catalogId: id,
+						catalogName: name,
+						products,
+						categories
+					};
+					console.log(catalog)
+					CATALOG = await db.Catalog.create(catalog);
+					CATALOG = catalog
+				})
+			);
+			res.status(200).json({
+				message: "Catalog pulled successfully!",
+				catalog: CATALOG
+			});
 		} else {
 			let error = new Error(`User with email ${email} could not be found`);
 			error.status = 404;
@@ -186,5 +258,54 @@ router.get('/catalogs', async (req, res) => {
 		res.status(500).json({ message: err.message });
 	}
 });
+
+router.get('/fetch-catalog', async (req, res) => {
+	try {
+
+	} catch (err) {
+	    console.error(err)
+	}
+})
+
+router.post('/update-catalog', async (req, res) => {
+	try {
+		const { email } = req.query;
+		const { data } = req.body
+		console.log(data)
+		const user = await db.User.findOne({ email: email })
+		if (user) {
+			const catalog = await db.Catalog.findOne({clientId: user['_id']})
+			if (catalog) {
+				console.log(catalog)
+				// find the matching variant ref to update
+				catalog['products'].forEach(({ variants }, productIdx) => {
+					variants.forEach(async ({ref}, variantIdx) => {
+						if (ref === data.id) {
+							catalog.products[productIdx].variants[variantIdx].weight = data.value
+							await catalog.save()
+							console.log(`New weight assigned to product variant ${ref}`)
+						}
+					})
+				})
+				res.status(200).json({message: "Catalog updated successfully!", catalog})
+			} else {
+				let error = new Error(`The user with email ${email} has no associated catalog`);
+				error.status = 404;
+				throw error;
+			}
+		} else {
+			let error = new Error(`User with email ${email} could not be found`);
+			error.status = 404;
+			throw error;
+		}
+	} catch (err) {
+		if (err.response) {
+			console.log(err.response.data);
+		} else {
+			console.error('ERROR', err);
+		}
+		res.status(500).json({ message: err.message });
+	}
+})
 
 module.exports = router;
