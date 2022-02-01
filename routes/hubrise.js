@@ -276,17 +276,19 @@ router.post('/update-catalog', async (req, res) => {
 		if (user) {
 			const catalog = await db.Catalog.findOne({clientId: user['_id']})
 			if (catalog) {
-				console.log(catalog)
 				// find the matching variant ref to update
-				catalog['products'].forEach(({ variants }, productIdx) => {
-					variants.forEach(async ({ref}, variantIdx) => {
-						if (ref === data.id) {
-							catalog.products[productIdx].variants[variantIdx].weight = data.value
-							await catalog.save()
-							console.log(`New weight assigned to product variant ${ref}`)
-						}
+				for (let item of data) {
+					catalog['products'].forEach(({ variants }, productIdx) => {
+						variants.forEach(({ ref }, variantIdx) => {
+							if (ref === item.id) {
+								catalog.products[productIdx].variants[variantIdx].weight = item.value
+								console.log(`New weight assigned to product variant ${ref}`)
+							}
+						})
 					})
-				})
+				}
+				await catalog.save()
+				catalog.products.forEach(prod => prod.variants.forEach(({ref, weight}) => console.table({ ref, weight})))
 				res.status(200).json({message: "Catalog updated successfully!", catalog})
 			} else {
 				let error = new Error(`The user with email ${email} has no associated catalog`);
