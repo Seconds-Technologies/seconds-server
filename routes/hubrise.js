@@ -88,9 +88,10 @@ router.get('/connect', async (req, res) => {
 		// create webhook subscription
 		URL = 'https://api.hubrise.com/v1/callback';
 		const payload = {
-			url: `${process.env.API_HOST}/hubrise`,
+			url: `${process.env.API_HOST}/api/v1/hubrise`,
 			events: {
-				order: ['create', 'update']
+				order: ['create', 'update'],
+				location: ['update']
 			}
 		};
 		let config = {
@@ -281,14 +282,14 @@ router.post('/update-catalog', async (req, res) => {
 					catalog['products'].forEach(({ variants }, productIdx) => {
 						variants.forEach(({ ref }, variantIdx) => {
 							if (ref === item.id) {
-								catalog.products[productIdx].variants[variantIdx].weight = item.value
+								catalog['products'][productIdx].variants[variantIdx].weight = item.value
 								console.log(`New weight assigned to product variant ${ref}`)
 							}
 						})
 					})
 				}
 				await catalog.save()
-				catalog.products.forEach(prod => prod.variants.forEach(({ref, weight}) => console.table({ ref, weight})))
+				catalog['products'].forEach(prod => prod.variants.forEach(({ref, weight}) => console.table({ ref, weight})))
 				res.status(200).json({message: "Catalog updated successfully!", catalog})
 			} else {
 				let error = new Error(`The user with email ${email} has no associated catalog`);
