@@ -128,17 +128,18 @@ router.patch('/disconnect', async (req, res, next) => {
 		const user = await db.User.findOneAndUpdate(
 			{ email: email },
 			{
-				'hubrise.accessToken': undefined,
-				'hubrise.accountName': undefined,
-				'hubrise.locationName': undefined,
-				'hubrise.locationId': undefined,
-				'hubrise.catalogName': undefined,
-				'hubrise.catalogId': undefined,
-				'hubrise.customerListName': undefined,
-				'hubrise.customerListId': undefined
+				'hubrise.accessToken': "",
+				'hubrise.accountName': "",
+				'hubrise.locationName': "",
+				'hubrise.locationId': "",
+				'hubrise.catalogName': "",
+				'hubrise.catalogId': "",
+				'hubrise.customerListName': "",
+				'hubrise.customerListId': ""
 			},
 			{ new: true }
 		);
+		console.log(user)
 		if (user) {
 			// delete the catalog from the db
 			const result = await db.Catalog.findOneAndDelete({clientId: user['_id']})
