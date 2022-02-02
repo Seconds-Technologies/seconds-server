@@ -10,12 +10,18 @@ const BASE_URL = 'https://api.hubrise.com/v1';
 router.get('/', async (req, res, next) => {
 	try {
 		const { email } = req.query;
-		const { hubrise } = await db.User.findOne({ email });
-		console.log(hubrise);
-		if (hubrise.accessToken) {
-			res.status(200).json(hubrise);
+		const user = await db.User.findOne({ email });
+		if (user) {
+			// fetch the hubrise catalog
+			const catalog = await db.Catalog.findOne({ clientId: user['_id'] })
+			let hubrise = catalog ? { ...user['hubrise'], catalog } : user['hubrise']
+			if (hubrise.accessToken) {
+				res.status(200).json(hubrise);
+			} else {
+				throw new Error('This user has no hubrise account integrated');
+			}
 		} else {
-			throw new Error('This user has no hubrise account integrated');
+			throw new Error(`No user found with email address ${email}`);
 		}
 	} catch (err) {
 		console.error(err);
