@@ -134,8 +134,11 @@ router.patch('/disconnect', async (req, res, next) => {
 			{ new: true }
 		);
 		if (user) {
+			// delete the catalog from the db
+			const result = await db.Catalog.findOneAndDelete({clientId: user['_id']})
+			console.log(result)
 			console.log(user['hubrise']);
-			return res.status(200).json({ message: 'Hubrise account has been disconnected' });
+			res.status(200).json({ message: 'Hubrise account has been disconnected' });
 		} else {
 			let error = new Error(`User with email ${email} could not be found`);
 			error.status = 404;
@@ -157,6 +160,8 @@ router.get('/pull-catalog', async (req, res) => {
 		const user = await db.User.findOne({ email });
 		console.log('USER:', !!user);
 		let CATALOG;
+		let CATALOG_ID;
+		let CATALOG_NAME;
 		const HUBRISE_CATALOGS = [];
 		if (user) {
 			let { locationId } = user['hubrise'];
@@ -239,11 +244,15 @@ router.get('/pull-catalog', async (req, res) => {
 					console.log(catalog)
 					CATALOG = await db.Catalog.create(catalog);
 					CATALOG = catalog
+					CATALOG_ID = id
+					CATALOG_NAME = name
 				})
 			);
 			res.status(200).json({
 				message: "Catalog pulled successfully!",
-				catalog: CATALOG
+				catalog: CATALOG,
+				catalogId: CATALOG_ID,
+				catalogName: CATALOG_NAME,
 			});
 		} else {
 			let error = new Error(`User with email ${email} could not be found`);
