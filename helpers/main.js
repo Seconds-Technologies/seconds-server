@@ -103,11 +103,7 @@ const updateDeliveryHours = async (req, res, next) => {
 	try {
 		const { email } = req.query;
 		console.table(req.body);
-		const user = await db.User.findOneAndUpdate(
-			{ email },
-			{ deliveryHours: req.body },
-			{ new: true }
-		);
+		const user = await db.User.findOneAndUpdate({ email }, { deliveryHours: req.body }, { new: true });
 		if (user) {
 			console.log('Updated delivery hours');
 			return res.status(200).json({
@@ -131,11 +127,7 @@ const updateDeliveryStrategies = async (req, res, next) => {
 	try {
 		const { email } = req.query;
 		console.table(req.body);
-		const user = await db.User.findOneAndUpdate(
-			{ email },
-			{ deliveryStrategies: req.body },
-			{ new: true }
-		);
+		const user = await db.User.findOneAndUpdate({ email }, { deliveryStrategies: req.body }, { new: true });
 		if (user) {
 			return res.status(200).json({
 				deliveryStrategies: user.deliveryStrategies,
@@ -170,7 +162,7 @@ const synchronizeUserInfo = async (req, res, next) => {
 			stripeCustomerId,
 			subscriptionId,
 			subscriptionPlan
-		} = await db.User.findOne({ 'email': EMAIL });
+		} = await db.User.findOne({ email: EMAIL });
 		res.status(200).json({
 			id: _id,
 			firstname,
@@ -196,11 +188,57 @@ const synchronizeUserInfo = async (req, res, next) => {
 	}
 };
 
+const createDriver = async (req, res, next) => {
+	try {
+		const { email } = req.query;
+		const user = await db.User.findOne({ email });
+		console.log(user);
+		if (user) {
+			let payload = { clientId: user['_id'], ...req.body };
+			const driver = await db.Driver.create(payload);
+			let { id, firstname, lastname, phone, email, vehicle, status, isOnline, createdAt, verified } = driver;
+			console.table({
+				id,
+				firstname,
+				lastname,
+				phone,
+				email,
+				vehicle,
+				status,
+				isOnline,
+				createdAt,
+				verified
+			});
+			res.status(200).json({
+				id,
+				firstname,
+				lastname,
+				phone,
+				email,
+				vehicle,
+				status,
+				isOnline,
+				createdAt,
+				verified
+			});
+		} else {
+			return next({
+				status: 400,
+				message: `No user found with email address ${email}`
+			});
+		}
+	} catch (err) {
+		console.error(err);
+		res.status(500).json({ message: err.message });
+	}
+};
+
 module.exports = {
 	generateSecurityKeys,
 	updateProfile,
 	updateDeliveryHours,
 	uploadProfileImage,
 	updateDeliveryStrategies,
-	synchronizeUserInfo
+	synchronizeUserInfo,
+	createDriver
 };

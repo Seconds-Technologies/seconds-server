@@ -24,7 +24,8 @@ const {
 	updateDeliveryHours,
 	uploadProfileImage,
 	updateDeliveryStrategies,
-	synchronizeUserInfo
+	synchronizeUserInfo,
+	createDriver,
 } = require("../helpers/main")
 
 router.post("/token", generateSecurityKeys);
@@ -32,6 +33,7 @@ router.post("/update-profile", updateProfile)
 router.post('/update-delivery-hours', updateDeliveryHours);
 router.post('/update-delivery-strategies', updateDeliveryStrategies)
 router.post("/upload", upload("seconds-profile-pictures").single('img'), uploadProfileImage)
-router.get("/sync-user", synchronizeUserInfo)
+router.get('/sync-user', synchronizeUserInfo)
+router.post('/create-driver', createDriver)
 
 module.exports = router;
