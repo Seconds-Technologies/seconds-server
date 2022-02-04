@@ -6,3 +6,6 @@ exports.S3 = new AWS.S3({
 	secretAccessKey: process.env.S3_SECRET_KEY,
 	region: process.env.S3_BUCKET_REGION
 })
+
+exports.DRIVER_STATUSES = ['AVAILABLE', 'ASSIGNED', 'BUSY']
+exports.VEHICLES = ['BIC', 'MTB', 'CGB', 'CAR', 'VAN']
