@@ -47,6 +47,35 @@ const login = async (req, res, next) => {
 			);
 			let img = '';
 			if (filename) img = await getBase64Image(filename);
+			// get drivers
+			let drivers = await db.Driver.find({clientId: _id})
+			drivers = drivers.map(driver => {
+				let {
+					_id: id,
+					firstname,
+					lastname,
+					phone,
+					email,
+					vehicle,
+					status,
+					isOnline,
+					createdAt,
+					verified
+				} = driver.toObject()
+				return {
+					id,
+					firstname,
+					lastname,
+					phone,
+					email,
+					vehicle,
+					status,
+					isOnline,
+					createdAt,
+					verified
+				}
+			})
+			console.log(drivers)
 			return res.status(200).json({
 				id: _id,
 				firstname,
@@ -70,6 +99,7 @@ const login = async (req, res, next) => {
 				woocommerce: woocommerce.consumerSecret,
 				squarespace: squarespace.accessToken,
 				hubrise: hubrise.accessToken,
+				drivers,
 				message: 'You have logged in Successfully!'
 			});
 		} else {

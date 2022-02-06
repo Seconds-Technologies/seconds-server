@@ -233,6 +233,50 @@ const createDriver = async (req, res, next) => {
 	}
 };
 
+const updateDriver = async (req, res, next) => {
+	try {
+		const { email } = req.query;
+		const user = await db.User.findOne({ email });
+		console.log(user);
+		if (user) {
+			const driver = await db.Driver.findByIdAndUpdate(req.body.id, req.body, { new: true});
+			let { id, firstname, lastname, phone, email, vehicle, status, isOnline, createdAt, verified } = driver;
+			console.table({
+				id,
+				firstname,
+				lastname,
+				phone,
+				email,
+				vehicle,
+				status,
+				isOnline,
+				createdAt,
+				verified
+			});
+			res.status(200).json({
+				id,
+				firstname,
+				lastname,
+				phone,
+				email,
+				vehicle,
+				status,
+				isOnline,
+				createdAt,
+				verified
+			});
+		} else {
+			return next({
+				status: 400,
+				message: `No user found with email address ${email}`
+			});
+		}
+	} catch (err) {
+		console.error(err);
+		res.status(500).json({ message: err.message });
+	}
+};
+
 module.exports = {
 	generateSecurityKeys,
 	updateProfile,
@@ -240,5 +284,6 @@ module.exports = {
 	uploadProfileImage,
 	updateDeliveryStrategies,
 	synchronizeUserInfo,
-	createDriver
+	createDriver,
+	updateDriver
 };
