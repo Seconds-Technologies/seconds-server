@@ -3,6 +3,7 @@ const crypto = require('crypto');
 const shorthash = require('shorthash');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const { getBase64Image } = require('../helpers');
+const moment = require('moment');
 
 const generateSecurityKeys = async (req, res, next) => {
 	// generate the apiKey using random byte sequences
@@ -194,7 +195,7 @@ const createDriver = async (req, res, next) => {
 		const user = await db.User.findOne({ email });
 		console.log(user);
 		if (user) {
-			let payload = { clientId: user['_id'], ...req.body };
+			let payload = { clientIds: [user['_id']], ...req.body };
 			const driver = await db.Driver.create(payload);
 			let { id, firstname, lastname, phone, email, vehicle, status, isOnline, createdAt, verified } = driver;
 			console.table({
@@ -239,7 +240,7 @@ const updateDriver = async (req, res, next) => {
 		const user = await db.User.findOne({ email });
 		console.log(user);
 		if (user) {
-			const driver = await db.Driver.findByIdAndUpdate(req.body.id, req.body, { new: true});
+			const driver = await db.Driver.findByIdAndUpdate(req.body.id, req.body, { new: true });
 			let { id, firstname, lastname, phone, email, vehicle, status, isOnline, createdAt, verified } = driver;
 			console.table({
 				id,
@@ -277,6 +278,32 @@ const updateDriver = async (req, res, next) => {
 	}
 };
 
+const verifyDriver = async (req, res, next) => {
+	try {
+		console.log(moment().format())
+		const driver = await db.Driver.findOne({ signupCode: req.body.signupCode });
+		if (driver) {
+			driver.verified = true;
+			await driver.save();
+			console.log(driver)
+			let driverObj = driver.toObject()
+			res.status(200).json({ message: 'Driver verified successfully', ...driverObj });
+		} else {
+			return next({
+				status: 404,
+				message: 'No registered driver found with that registration code'
+			});
+		}
+	} catch (err) {
+		console.error(err);
+		if (err.status) {
+			res.status(err.status).json({ message: err.message });
+		} else {
+			res.status(500).json({ message: err.message });
+		}
+	}
+};
+
 module.exports = {
 	generateSecurityKeys,
 	updateProfile,
@@ -285,5 +312,6 @@ module.exports = {
 	updateDeliveryStrategies,
 	synchronizeUserInfo,
 	createDriver,
-	updateDriver
+	updateDriver,
+	verifyDriver
 };

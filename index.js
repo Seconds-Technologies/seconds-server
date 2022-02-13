@@ -22,6 +22,7 @@ const hubriseRoutes = require('./routes/hubrise')
 const paymentRoutes = require('./routes/payments');
 const stripeRoutes = require('./routes/stripe');
 const subscriptionRoutes = require('./routes/subscriptions');
+const driverRoutes = require('./routes/driver');
 
 const app = express();
 app.use(logger('dev'));
@@ -58,6 +59,7 @@ app.use('/uploads', express.static('uploads'));
 app.use('/server/auth', authRoutes);
 app.use('/server/main', authenticateUser, mainRoutes); //TODO - Correct path for redux thunks in client-end
 app.use('/server/shopify', authenticateUser, shopifyRoutes);
+app.use('/server/driver', driverRoutes);
 app.use('/server/square', squareRoutes)
 app.use('/server/woocommerce', wooCommerceTimeout, woocommerceRoutes)
 app.use('/server/squarespace', squarespaceRoutes)
