@@ -71,7 +71,7 @@ app.use('/server/subscription', subscriptionRoutes);
 
 //routes
 app.use((req, res, next) => {
-	let err = new Error('Not Found');
+	let err = new Error('Endpoint Not Found');
 	err.status = 404;
 	next(err);
 });
