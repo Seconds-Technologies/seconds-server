@@ -28,7 +28,7 @@ const {
 	synchronizeUserInfo
 } = require('../helpers/main');
 
-const { createDriver, updateDriver } = require('../helpers/driver');
+const { getDrivers, createDriver, updateDriver } = require('../helpers/driver');
 
 router.post('/token', generateSecurityKeys);
 router.post('/update-profile', updateProfile);
@@ -36,6 +36,7 @@ router.post('/update-delivery-hours', updateDeliveryHours);
 router.post('/update-delivery-strategies', updateDeliveryStrategies);
 router.post('/upload', upload('seconds-profile-pictures').single('img'), uploadProfileImage);
 router.get('/sync-user', synchronizeUserInfo);
+router.get('/drivers', getDrivers)
 router.post('/create-driver', createDriver);
 router.post('/update-driver', updateDriver);
 
