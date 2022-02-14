@@ -48,7 +48,7 @@ const login = async (req, res, next) => {
 			let img = '';
 			if (filename) img = await getBase64Image(filename);
 			// get drivers
-			let drivers = await db.Driver.find({clientId: _id})
+			let drivers = await db.Driver.find({ clientIds: _id });
 			drivers = drivers.map(driver => {
 				let {
 					_id: id,
