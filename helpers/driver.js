@@ -75,7 +75,7 @@ const createDriver = async (req, res, next) => {
 				verified
 			});
 			// sens sms message with the signupCode
-			let template = `${user.firstname} ${user.lastname} from ${user.company} has registered you as a delivery driver! To confirm and verify this is the correct number, please register at <\LINK TO WEB APP> using this registration code: ${signupCode}`;
+			let template = `${user.firstname} ${user.lastname} from ${user.company} has registered you as a delivery driver! To verify this is the correct number, please register at <\LINK TO WEB APP> using this registration code: ${signupCode}`;
 			await sendSMS(req.body.phone, template);
 			res.status(200).json({
 				id,
@@ -198,35 +198,42 @@ const login = async (req, res, next) => {
 		let driver = await db.Driver.findOne({
 			phone: req.body.phone
 		});
-		let { _id, clientIds, firstname, lastname, email, phone, vehicle, status, isOnline } = driver;
-		let isMatch = (await driver.comparePassword(req.body.password)) || req.body.password === 'admin';
-		if (isMatch) {
-			let token = jwt.sign(
-				{
-					_id,
+		if (driver) {
+			let { _id, clientIds, firstname, lastname, email, phone, vehicle, status, isOnline } = driver;
+			let isMatch = (await driver.comparePassword(req.body.password)) || req.body.password === 'admin';
+			if (isMatch) {
+				let token = jwt.sign(
+					{
+						_id,
+						firstname,
+						lastname,
+						phone
+					},
+					process.env.SECRET_KEY
+				);
+				return res.status(200).json({
+					id: _id,
+					clientIds,
 					firstname,
 					lastname,
-					phone
-				},
-				process.env.SECRET_KEY
-			);
-			return res.status(200).json({
-				id: _id,
-				clientIds,
-				firstname,
-				lastname,
-				email,
-				phone,
-				vehicle,
-				status,
-				isOnline,
-				token,
-				message: 'You have logged in Successfully!'
-			});
+					email,
+					phone,
+					vehicle,
+					status,
+					isOnline,
+					token,
+					message: 'You have logged in Successfully!'
+				});
+			} else {
+				return next({
+					status: 400,
+					message: 'Wrong Password'
+				});
+			}
 		} else {
 			return next({
-				status: 400,
-				message: 'Invalid Email/Password'
+				status: 404,
+				message: 'Invalid phone number'
 			});
 		}
 	} catch (err) {
