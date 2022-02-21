@@ -3,6 +3,7 @@ const moment = require('moment');
 const jwt = require('jsonwebtoken');
 const sendSMS = require('../services/sms');
 const { customAlphabet } = require('nanoid/async');
+const { STATUS } = require('@seconds-technologies/database_schemas/constants');
 const nanoid = customAlphabet('1234567890', 6);
 
 const getDrivers = async (req, res, next) => {
@@ -199,7 +200,7 @@ const login = async (req, res, next) => {
 			phone: req.body.phone
 		});
 		if (driver) {
-			let { _id, clientIds, firstname, lastname, email, phone, vehicle, status, isOnline } = driver;
+			let { _id, clientIds, firstname, lastname, email, phone, vehicle, status, isOnline, apiKey } = driver;
 			let isMatch = (await driver.comparePassword(req.body.password)) || req.body.password === 'admin';
 			if (isMatch) {
 				let token = jwt.sign(
@@ -222,6 +223,7 @@ const login = async (req, res, next) => {
 					status,
 					isOnline,
 					token,
+					apiKey,
 					message: 'You have logged in Successfully!'
 				});
 			} else {
@@ -246,4 +248,55 @@ const login = async (req, res, next) => {
 	}
 };
 
-module.exports = { getDrivers, createDriver, updateDriver, verifyDriver, login };
+const acceptJob = async (req, res, next) => {
+	try {
+		const { driverId, jobId } = req.body;
+		const driver = await db.Driver.findById(driverId)
+		const job = await db.Job.findById(jobId)
+		if (driver && job) {
+			job.driverInformation.id = driver._id;
+			job.driverInformation.name = `${driver.fistname} ${driver.lastname}`
+			job.driverInformation.phone = driver.phone;
+			job.driverInformation.transport = driver.vehicle
+			job.status = STATUS.DISPATCHING
+			await job.save()
+			return res.status(200).json(job)
+		} else {
+			return next({
+				status: 404,
+				message: 'Driver/Job not found'
+			})
+		}
+	} catch (err) {
+		console.error(err);
+		if (err.status) {
+			res.status(err.status).json({ code: err.status, message: err.message });
+		} else {
+			res.status(500).json({ code: 500, message: err.message });
+		}
+	}
+}
+
+const progressJob = async (req, res, next) => {
+	try {
+		const { jobId, status } = req.body;
+		const job = await db.Job.findByIdAndUpdate(jobId, {status}, { new: true});
+		if (job) {
+			return res.status(200).json(job)
+		} else {
+			return next({
+				status: 404,
+				message: `Job not found`
+			})
+		}
+	} catch (err) {
+	    console.error(err)
+		if (err.status) {
+			res.status(err.status).json({ code: err.status, message: err.message });
+		} else {
+			res.status(500).json({ code: 500, message: err.message });
+		}
+	}
+}
+
+module.exports = { getDrivers, createDriver, updateDriver, verifyDriver, login, acceptJob, progressJob };
