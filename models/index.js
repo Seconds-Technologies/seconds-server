@@ -1,5 +1,5 @@
 const mongoose = require('mongoose')
-const { catalogSchema, userSchema, driverSchema } = require('@seconds-technologies/database_schemas')
+const { catalogSchema, userSchema, jobSchema, driverSchema } = require('@seconds-technologies/database_schemas')
 
 mongoose.set("debug", false);
 mongoose.Promise = Promise;
@@ -10,5 +10,6 @@ mongoose.connect(process.env.MONGODB_URI || "mongodb://localhost:27017/seconds",
 
 module.exports.User = mongoose.model('User', userSchema);
 module.exports.PostCode = mongoose.model("Postcode", require("./region"));
+module.exports.Job = mongoose.model('Job', jobSchema)
 module.exports.Driver = mongoose.model("Driver", driverSchema);
 module.exports.Catalog = mongoose.model('Catalog', catalogSchema);
