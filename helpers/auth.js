@@ -4,7 +4,7 @@ const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const sendEmail = require('../services/email');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
-const { getBase64Image } = require('../helpers');
+const { getBase64Image, genApiKey } = require('../helpers');
 
 const login = async (req, res, next) => {
 	try {
@@ -119,15 +119,7 @@ const login = async (req, res, next) => {
 
 const register = async (req, res, next) => {
 	try {
-		let apiKey = '';
-		const rand = crypto.randomBytes(24);
-		let chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'.repeat(2);
-
-		for (let i = 0; i < rand.length; i++) {
-			let index = rand[i] % chars.length;
-			apiKey += chars[index];
-		}
-		console.log('Generated API Key:', apiKey);
+		let apiKey = genApiKey();
 		//create a stripe customer
 		console.log('----------------------------');
 		const customer = await stripe.customers.create({

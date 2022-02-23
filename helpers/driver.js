@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken');
 const sendSMS = require('../services/sms');
 const { customAlphabet } = require('nanoid/async');
 const { STATUS } = require('@seconds-technologies/database_schemas/constants');
+const { genApiKey } = require('./index');
 const nanoid = customAlphabet('1234567890', 6);
 
 const getDrivers = async (req, res, next) => {
@@ -60,7 +61,7 @@ const createDriver = async (req, res, next) => {
 			// generate signupCode
 			let signupCode = await nanoid();
 			console.log(signupCode, typeof signupCode)
-			let payload = { clientIds: [user['_id']], ...req.body, signupCode };
+			let payload = { clientIds: [user['_id']], signupCode, apiKey: genApiKey(), ...req.body };
 			const driver = await db.Driver.create(payload);
 			let { id, firstname, lastname, phone, email, vehicle, status, isOnline, createdAt, verified } = driver;
 			console.table({
