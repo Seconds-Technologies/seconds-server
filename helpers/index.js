@@ -1,5 +1,19 @@
 const { S3 } = require('../constants/index');
 const db = require('../models');
+const crypto = require('crypto');
+
+function genApiKey() {
+	let apiKey = '';
+	const rand = crypto.randomBytes(24);
+	let chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'.repeat(2);
+
+	for (let i = 0; i < rand.length; i++) {
+		let index = rand[i] % chars.length;
+		apiKey += chars[index];
+	}
+	console.log('Generated API Key:', apiKey);
+	return apiKey
+}
 
 function encode(data) {
 	let buf = Buffer.from(data);
@@ -121,6 +135,7 @@ async function handleCanceledSubscription(subscription) {
 }
 
 module.exports = {
+	genApiKey,
 	getBase64Image,
 	updateOrders,
 	filterAndRemove,
