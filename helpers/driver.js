@@ -168,10 +168,7 @@ const verifyDriver = async (req, res, next) => {
 					clientIds,
 					verified
 				} = driver.toObject();
-				res.status(200).json({
-					message: 'Driver verified successfully',
-					driver: { id, firstname, lastname, email, phone, vehicle, status, clientIds, verified }
-				});
+				res.status(200).json({ id, firstname, lastname, email, phone, vehicle, status, clientIds, verified, message: 'Driver verified successfully' });
 			} else {
 				return next({
 					status: 400,
