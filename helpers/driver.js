@@ -137,6 +137,11 @@ const updateDriver = async (req, res, next) => {
 				createdAt,
 				verified
 			});
+		} else {
+			return next({
+				status: 404,
+				message: "No driver found with ID " + id
+			})
 		}
 	} catch (err) {
 		console.error(err);
