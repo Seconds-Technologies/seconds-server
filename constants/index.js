@@ -7,5 +7,11 @@ exports.S3 = new AWS.S3({
 	region: process.env.S3_BUCKET_REGION
 })
 
-exports.DRIVER_STATUSES = ['AVAILABLE', 'ASSIGNED', 'BUSY', 'OFFLINE']
+exports.DRIVER_STATUSES = ['AVAILABLE', 'BUSY', 'OFFLINE']
 exports.VEHICLES = ['BIC', 'MTB', 'CGB', 'CAR', 'VAN']
+
+exports.DRIVER_STATUS = {
+	AVAILABLE: "AVAILABLE",
+	BUSY: "BUSY",
+	OFFLINE: "OFFLINE"
+}
