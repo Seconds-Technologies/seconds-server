@@ -146,43 +146,79 @@ const updateDeliveryStrategies = async (req, res, next) => {
 const synchronizeUserInfo = async (req, res, next) => {
 	try {
 		const { email: EMAIL } = req.query;
-		let {
-			_id,
-			firstname,
-			lastname,
-			email,
-			phone,
-			fullAddress,
-			address,
-			company,
-			createdAt,
-			apiKey,
-			selectionStrategy,
-			deliveryHours,
-			paymentMethodId,
-			stripeCustomerId,
-			subscriptionId,
-			subscriptionPlan
-		} = await db.User.findOne({ email: EMAIL });
-		res.status(200).json({
-			id: _id,
-			firstname,
-			lastname,
-			email,
-			company,
-			createdAt,
-			phone,
-			fullAddress,
-			address,
-			deliveryHours,
-			apiKey,
-			selectionStrategy,
-			stripeCustomerId,
-			paymentMethodId,
-			subscriptionId,
-			subscriptionPlan,
-			message: 'User info synchronized successfully'
-		});
+		let user = await db.User.findOne({ email: EMAIL });
+		if (user) {
+			let {
+				_id,
+				firstname,
+				lastname,
+				email,
+				phone,
+				fullAddress,
+				address,
+				company,
+				createdAt,
+				apiKey,
+				selectionStrategy,
+				deliveryHours,
+				paymentMethodId,
+				stripeCustomerId,
+				subscriptionId,
+				subscriptionPlan
+			} = user;
+			// lookup integrated drivers
+			let drivers = await db.Driver.find({ clientIds: _id });
+			res.status(200).json({
+				id: _id,
+				firstname,
+				lastname,
+				email,
+				company,
+				createdAt,
+				phone,
+				fullAddress,
+				address,
+				deliveryHours,
+				apiKey,
+				selectionStrategy,
+				stripeCustomerId,
+				paymentMethodId,
+				subscriptionId,
+				subscriptionPlan,
+				drivers: drivers.map(driver => {
+					let {
+						_id: id,
+						firstname,
+						lastname,
+						phone,
+						email,
+						vehicle,
+						status,
+						isOnline,
+						createdAt,
+						verified
+					} = driver.toObject();
+					return {
+						id,
+						firstname,
+						lastname,
+						phone,
+						email,
+						vehicle,
+						status,
+						isOnline,
+						createdAt,
+						verified
+					};
+				}),
+				message: 'User info synchronized successfully'
+			});
+		} else {
+			return next({
+				status: 404,
+				message: `No user found with the specified email ${email}`
+			});
+		}
 	} catch (err) {
 		console.error(err);
 		res.status(500).json({ message: err.message });
