@@ -5,7 +5,26 @@ const sendSMS = require('../services/sms');
 const { customAlphabet } = require('nanoid/async');
 const { STATUS } = require('@seconds-technologies/database_schemas/constants');
 const { genApiKey } = require('./index');
+const { DRIVER_STATUS } = require('../constants');
 const nanoid = customAlphabet('1234567890', 6);
+
+async function checkDriverStatus(driverId){
+	try {
+	    // query all jobs belonging to driver
+		// count number of jobs where status is DISPATCHING or EN-ROUTE
+		const count = await db.Job.countDocuments({'driverInformation.id': driverId, status: {$in: [STATUS.DISPATCHING, STATUS.EN_ROUTE]}})
+		console.table({count})
+		// make necessary update
+		if (count > 0) {
+			await db.Driver.findByIdAndUpdate(driverId, {status: DRIVER_STATUS.BUSY})
+		} else {
+			await db.Driver.findByIdAndUpdate(driverId, {status: DRIVER_STATUS.AVAILABLE})
+		}
+	} catch (err) {
+	    console.error(err)
+		throw err
+	}
+}
 
 const getDrivers = async (req, res, next) => {
 	try {
@@ -262,7 +281,7 @@ const login = async (req, res, next) => {
 const acceptJob = async (req, res, next) => {
 	try {
 		const { driverId, jobId } = req.body;
-		const driver = await db.Driver.findById(driverId);
+		const driver = await db.Driver.findByIdAndUpdate(driverId, {status: DRIVER_STATUS.BUSY});
 		const job = await db.Job.findById(jobId);
 		if (driver && job) {
 			job.driverInformation.id = driver._id;
@@ -292,7 +311,9 @@ const progressJob = async (req, res, next) => {
 	try {
 		const { jobId, status } = req.body;
 		const job = await db.Job.findByIdAndUpdate(jobId, { status }, { new: true });
+		// check the driver's job status if it needs to be changed
 		if (job) {
+			await checkDriverStatus(job['driverInformation'].id)
 			return res.status(200).json(job);
 		} else {
 			return next({
