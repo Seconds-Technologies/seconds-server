@@ -7,6 +7,11 @@ exports.S3 = new AWS.S3({
 	region: process.env.S3_BUCKET_REGION
 })
 
+exports.S3_BUCKET_NAMES = {
+	PROFILE_IMAGE: "seconds-profile-pictures",
+	DOCUMENTS: "seconds-delivery-documents"
+}
+
 exports.DRIVER_STATUSES = ['AVAILABLE', 'BUSY', 'OFFLINE']
 exports.VEHICLES = ['BIC', 'MTB', 'CGB', 'CAR', 'VAN']
 
