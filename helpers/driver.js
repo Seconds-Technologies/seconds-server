@@ -345,7 +345,7 @@ const uploadDeliveryProof = async (req, res, next) => {
 			const base64Data = new Buffer.from(img.replace(/^data:image\/\w+;base64,/, ""), 'base64');
 			console.log(base64Data)
 			// generate s3 object params
-			const Key = `${moment().format("DD-MM-YYYY")}/${orderNumber}/${type}`
+			const Key = `${process.env.ENVIRONMENT_MODE}/${moment().format("DD-MM-YYYY")}/${orderNumber}/${type}`
 			console.table({Key})
 			const params = {
 				Bucket: S3_BUCKET_NAMES.DOCUMENTS,
