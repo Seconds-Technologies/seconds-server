@@ -4,26 +4,29 @@ const jwt = require('jsonwebtoken');
 const sendSMS = require('../services/sms');
 const { customAlphabet } = require('nanoid/async');
 const { STATUS } = require('@seconds-technologies/database_schemas/constants');
-const { genApiKey, getBase64Image } = require('./index');
+const { genApiKey } = require('./index');
 const { DRIVER_STATUS, S3, S3_BUCKET_NAMES } = require('../constants');
 const shorthash = require('shorthash');
 const nanoid = customAlphabet('1234567890', 6);
 
-async function checkDriverStatus(driverId){
+async function checkDriverStatus(driverId) {
 	try {
-	    // query all jobs belonging to driver
+		// query all jobs belonging to driver
 		// count number of jobs where status is DISPATCHING or EN-ROUTE
-		const count = await db.Job.countDocuments({'driverInformation.id': driverId, status: {$in: [STATUS.DISPATCHING, STATUS.EN_ROUTE]}})
-		console.table({count})
+		const count = await db.Job.countDocuments({
+			'driverInformation.id': driverId,
+			status: { $in: [STATUS.DISPATCHING, STATUS.EN_ROUTE] }
+		});
+		console.table({ count });
 		// make necessary update
 		if (count > 0) {
-			await db.Driver.findByIdAndUpdate(driverId, {status: DRIVER_STATUS.BUSY})
+			await db.Driver.findByIdAndUpdate(driverId, { status: DRIVER_STATUS.BUSY });
 		} else {
-			await db.Driver.findByIdAndUpdate(driverId, {status: DRIVER_STATUS.AVAILABLE})
+			await db.Driver.findByIdAndUpdate(driverId, { status: DRIVER_STATUS.AVAILABLE });
 		}
 	} catch (err) {
-	    console.error(err)
-		throw err
+		console.error(err);
+		throw err;
 	}
 }
 
@@ -129,11 +132,12 @@ const updateDriver = async (req, res, next) => {
 		// check if password was updated
 		if (password) {
 			// add password to payload
-			payload = { ...payload, password }
+			payload = { ...payload, password };
 		}
 		const driver = await db.Driver.findByIdAndUpdate(id, payload, { new: true });
 		if (driver) {
-			let { firstname, lastname, phone, email, vehicle, status, isOnline, createdAt, verified, devicePushToken } = driver;
+			let { firstname, lastname, phone, email, vehicle, status, isOnline, createdAt, verified, devicePushToken } =
+				driver;
 			console.table({
 				firstname,
 				lastname,
@@ -161,8 +165,8 @@ const updateDriver = async (req, res, next) => {
 		} else {
 			return next({
 				status: 404,
-				message: "No driver found with ID " + id
-			})
+				message: 'No driver found with ID ' + id
+			});
 		}
 	} catch (err) {
 		console.error(err);
@@ -283,7 +287,7 @@ const login = async (req, res, next) => {
 const acceptJob = async (req, res, next) => {
 	try {
 		const { driverId, jobId } = req.body;
-		const driver = await db.Driver.findByIdAndUpdate(driverId, {status: DRIVER_STATUS.BUSY});
+		const driver = await db.Driver.findByIdAndUpdate(driverId, { status: DRIVER_STATUS.BUSY });
 		const job = await db.Job.findById(jobId);
 		if (driver && job) {
 			job.driverInformation.id = driver._id;
@@ -333,34 +337,36 @@ const progressJob = async (req, res, next) => {
 	}
 };
 
-const uploadDeliveryProof = async (req, res, next) => {
+const uploadDeliverySignature = async (req, res, next) => {
 	try {
 		const { jobId, type, img } = req.body;
-		console.table({ jobId, type })
+		console.table({ jobId, type });
 		// verify that the job exists
-		const job = await db.Job.findById(jobId)
-		if(job) {
-			const { jobSpecification: { orderNumber } } = job.toObject();
+		const job = await db.Job.findById(jobId);
+		if (job) {
+			const {
+				jobSpecification: { orderNumber }
+			} = job.toObject();
 			// extract base64 data from image string
-			const base64Data = new Buffer.from(img.replace(/^data:image\/\w+;base64,/, ""), 'base64');
-			console.log(base64Data)
+			const base64Data = new Buffer.from(img.replace(/^data:image\/\w+;base64,/, ''), 'base64');
+			console.log(base64Data);
 			// generate s3 object params
-			const Key = `${process.env.ENVIRONMENT_MODE}/${moment().format("DD-MM-YYYY")}/${orderNumber}/${type}`
-			console.table({Key})
+			const Key = `${process.env.ENVIRONMENT_MODE}/${moment().format('DD-MM-YYYY')}/${orderNumber}/${type}`;
+			console.table({ Key });
 			const params = {
 				Bucket: S3_BUCKET_NAMES.DOCUMENTS,
 				Key, // type is not required
 				Body: base64Data,
 				ContentEncoding: 'base64', // required
 				ContentType: `image/jpeg` // required. Notice the back ticks
-			}
+			};
 			// upload the image to S3 bucket and retrieve the object location / file details
 			const result = await S3.upload(params).promise();
 			console.log('Image File:', `${type}.jpg`);
-			//update the profile image in user db
-			job['jobSpecification']['deliveries'][0].proofOfDelivery[type].filename = `${type}.jpg`
-			job['jobSpecification']['deliveries'][0].proofOfDelivery[type].location = result.Location
-			console.log(job);
+			//update the signature image in job document
+			job['jobSpecification']['deliveries'][0].proofOfDelivery[type].filename = `${type}.jpg`;
+			job['jobSpecification']['deliveries'][0].proofOfDelivery[type].location = result.Location;
+			console.log(job.jobSpecification.deliveries);
 			await job.save();
 			// retrieve image object from s3 convert to base64
 			// let base64Image = await getBase64Image(filename);
@@ -374,6 +380,48 @@ const uploadDeliveryProof = async (req, res, next) => {
 			message: err.message
 		});
 	}
-}
+};
 
-module.exports = { getDrivers, createDriver, updateDriver, verifyDriver, login, acceptJob, progressJob, uploadDeliveryProof };
+const uploadDeliveryPhoto = async (req, res, next) => {
+	try {
+		const { jobId } = req.body;
+		console.log(jobId);
+		const file = req.file;
+		console.log(file);
+		const job = await db.Job.findById(jobId);
+		//update the signature image in job document
+		if (job) {
+			const location = req.file.location;
+			job['jobSpecification']['deliveries'][0].proofOfDelivery.photo.filename = `${shorthash.unique(
+				file.originalname
+			)}.jpg`;
+			job['jobSpecification']['deliveries'][0].proofOfDelivery.photo.location = location;
+			console.log(job.jobSpecification.deliveries);
+			await job.save();
+			return res.status(200).json({ success: true });
+		} else {
+			return next({
+				status: 404,
+				message: 'No job found with Id ' + jobId
+			});
+		}
+	} catch (err) {
+		console.error(err);
+		return next({
+			status: 400,
+			message: err.message
+		});
+	}
+};
+
+module.exports = {
+	getDrivers,
+	createDriver,
+	updateDriver,
+	verifyDriver,
+	login,
+	acceptJob,
+	progressJob,
+	uploadDeliverySignature,
+	uploadDeliveryPhoto
+};
