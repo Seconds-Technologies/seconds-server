@@ -4,6 +4,7 @@ const crypto = require('crypto');
 const multer = require('multer');
 const multerS3 = require('multer-s3');
 const shorthash = require('shorthash');
+const moment = require('moment');
 
 function genApiKey() {
 	let apiKey = '';
@@ -147,7 +148,7 @@ const upload = bucket =>
 				cb(null, { fieldName: file.fieldname });
 			},
 			key: function (req, file, cb) {
-				cb(null, `${shorthash.unique(file.originalname)}.jpg`);
+				cb(null, `${process.env.ENVIRONMENT_MODE}/${moment().format("DD-MM-YYYY")}/${req.body.orderNumber}/${shorthash.unique(file.originalname)}.jpg`);
 			}
 		})
 	});
