@@ -4,8 +4,9 @@ const jwt = require('jsonwebtoken');
 const sendSMS = require('../services/sms');
 const { customAlphabet } = require('nanoid/async');
 const { STATUS } = require('@seconds-technologies/database_schemas/constants');
-const { genApiKey } = require('./index');
-const { DRIVER_STATUS } = require('../constants');
+const { genApiKey, getBase64Image } = require('./index');
+const { DRIVER_STATUS, S3, S3_BUCKET_NAMES } = require('../constants');
+const shorthash = require('shorthash');
 const nanoid = customAlphabet('1234567890', 6);
 
 async function checkDriverStatus(driverId){
@@ -132,7 +133,7 @@ const updateDriver = async (req, res, next) => {
 		}
 		const driver = await db.Driver.findByIdAndUpdate(id, payload, { new: true });
 		if (driver) {
-			let { firstname, lastname, phone, email, vehicle, status, isOnline, createdAt, verified } = driver;
+			let { firstname, lastname, phone, email, vehicle, status, isOnline, createdAt, verified, devicePushToken } = driver;
 			console.table({
 				firstname,
 				lastname,
@@ -142,7 +143,8 @@ const updateDriver = async (req, res, next) => {
 				status,
 				isOnline,
 				createdAt,
-				verified
+				verified,
+				devicePushToken
 			});
 			res.status(200).json({
 				id,
@@ -313,7 +315,7 @@ const progressJob = async (req, res, next) => {
 		const job = await db.Job.findByIdAndUpdate(jobId, { status }, { new: true });
 		// check the driver's job status if it needs to be changed
 		if (job) {
-			await checkDriverStatus(job['driverInformation'].id)
+			await checkDriverStatus(job['driverInformation'].id);
 			return res.status(200).json(job);
 		} else {
 			return next({
@@ -331,4 +333,47 @@ const progressJob = async (req, res, next) => {
 	}
 };
 
-module.exports = { getDrivers, createDriver, updateDriver, verifyDriver, login, acceptJob, progressJob };
+const uploadDeliveryProof = async (req, res, next) => {
+	try {
+		const { jobId, type, img } = req.body;
+		console.table({ jobId, type })
+		// verify that the job exists
+		const job = await db.Job.findById(jobId)
+		if(job) {
+			const { jobSpecification: { orderNumber } } = job.toObject();
+			// extract base64 data from image string
+			const base64Data = new Buffer.from(img.replace(/^data:image\/\w+;base64,/, ""), 'base64');
+			console.log(base64Data)
+			// generate s3 object params
+			const Key = `${moment().format("DD-MM-YYYY")}/${orderNumber}/${type}`
+			console.table({Key})
+			const params = {
+				Bucket: S3_BUCKET_NAMES.DOCUMENTS,
+				Key, // type is not required
+				Body: base64Data,
+				ContentEncoding: 'base64', // required
+				ContentType: `image/jpeg` // required. Notice the back ticks
+			}
+			// upload the image to S3 bucket and retrieve the object location / file details
+			const result = await S3.upload(params).promise();
+			console.log('Image File:', `${type}.jpg`);
+			//update the profile image in user db
+			job['jobSpecification']['deliveries'][0].proofOfDelivery[type].filename = `${type}.jpg`
+			job['jobSpecification']['deliveries'][0].proofOfDelivery[type].location = result.Location
+			console.log(job);
+			await job.save();
+			// retrieve image object from s3 convert to base64
+			// let base64Image = await getBase64Image(filename);
+			return res.status(200).json({
+				message: 'image uploaded!'
+			});
+		}
+	} catch (err) {
+		return next({
+			status: 400,
+			message: err.message
+		});
+	}
+}
+
+module.exports = { getDrivers, createDriver, updateDriver, verifyDriver, login, acceptJob, progressJob, uploadDeliveryProof };

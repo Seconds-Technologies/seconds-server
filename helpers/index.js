@@ -1,6 +1,9 @@
 const { S3 } = require('../constants/index');
 const db = require('../models');
 const crypto = require('crypto');
+const multer = require('multer');
+const multerS3 = require('multer-s3');
+const shorthash = require('shorthash');
 
 function genApiKey() {
 	let apiKey = '';
@@ -134,7 +137,23 @@ async function handleCanceledSubscription(subscription) {
 	}
 }
 
+const upload = bucket =>
+	multer({
+		storage: multerS3({
+			s3: S3,
+			bucket,
+			contentType: multerS3.AUTO_CONTENT_TYPE,
+			metadata: function (req, file, cb) {
+				cb(null, { fieldName: file.fieldname });
+			},
+			key: function (req, file, cb) {
+				cb(null, `${shorthash.unique(file.originalname)}.jpg`);
+			}
+		})
+	});
+
 module.exports = {
+	upload,
 	genApiKey,
 	getBase64Image,
 	updateOrders,
