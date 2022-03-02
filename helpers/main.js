@@ -4,6 +4,7 @@ const shorthash = require('shorthash');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const { getBase64Image } = require('../helpers');
 const moment = require('moment');
+const { S3_BUCKET_NAMES } = require('../constants');
 
 const generateSecurityKeys = async (req, res, next) => {
 	// generate the apiKey using random byte sequences
@@ -87,7 +88,7 @@ const uploadProfileImage = async (req, res, next) => {
 		);
 		console.log(profileImage);
 		// retrieve image object from s3 convert to base64
-		let base64Image = await getBase64Image(filename);
+		let base64Image = await getBase64Image(filename, S3_BUCKET_NAMES.PROFILE_IMAGE);
 		return res.status(200).json({
 			base64Image,
 			message: 'image uploaded!'

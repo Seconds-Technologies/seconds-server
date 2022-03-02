@@ -24,10 +24,10 @@ function encode(data) {
 	return buf.toString('base64');
 }
 
-async function getBase64Image(filename) {
+async function getBase64Image(filename, bucketName) {
 	if (filename) {
 		const data = await S3.getObject({
-			Bucket: 'seconds-profile-pictures',
+			Bucket: bucketName,
 			Key: filename
 		}).promise();
 		console.log(data);
