@@ -358,13 +358,13 @@ const uploadDeliverySignature = async (req, res, next) => {
 				Key, // type is not required
 				Body: base64Data,
 				ContentEncoding: 'base64', // required
-				ContentType: `image/jpeg` // required. Notice the back ticks
+				ContentType: `image/png` // required. Notice the back ticks
 			};
 			// upload the image to S3 bucket and retrieve the object location / file details
 			const result = await S3.upload(params).promise();
-			console.log('Image File:', `${type}.jpg`);
+			console.log('Image File:', `${type}.png`);
 			//update the signature image in job document
-			job['jobSpecification']['deliveries'][0].proofOfDelivery[type].filename = `${type}.jpg`;
+			job['jobSpecification']['deliveries'][0].proofOfDelivery[type].filename = `${type}.png`;
 			job['jobSpecification']['deliveries'][0].proofOfDelivery[type].location = result.Location;
 			console.log(job.jobSpecification.deliveries);
 			await job.save();
