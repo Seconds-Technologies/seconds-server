@@ -5,6 +5,7 @@ const crypto = require('crypto');
 const sendEmail = require('../services/email');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const { getBase64Image, genApiKey } = require('../helpers');
+const { S3_BUCKET_NAMES } = require('../constants');
 
 const login = async (req, res, next) => {
 	try {
@@ -46,7 +47,7 @@ const login = async (req, res, next) => {
 				process.env.SECRET_KEY
 			);
 			let img = '';
-			if (filename) img = await getBase64Image(filename);
+			if (filename) img = await getBase64Image(filename, S3_BUCKET_NAMES.PROFILE_IMAGE);
 			// get drivers
 			let drivers = await db.Driver.find({ clientIds: _id });
 			drivers = drivers.map(driver => {

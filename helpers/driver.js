@@ -4,7 +4,7 @@ const jwt = require('jsonwebtoken');
 const sendSMS = require('../services/sms');
 const { customAlphabet } = require('nanoid/async');
 const { STATUS } = require('@seconds-technologies/database_schemas/constants');
-const { genApiKey } = require('./index');
+const { genApiKey, getBase64Image } = require('./index');
 const { DRIVER_STATUS, S3, S3_BUCKET_NAMES } = require('../constants');
 const shorthash = require('shorthash');
 const nanoid = customAlphabet('1234567890', 6);
@@ -364,7 +364,7 @@ const uploadDeliverySignature = async (req, res, next) => {
 			const result = await S3.upload(params).promise();
 			console.log('Image File:', `${type}.png`);
 			//update the signature image in job document
-			job['jobSpecification']['deliveries'][0].proofOfDelivery[type].filename = `${type}.png`;
+			job['jobSpecification']['deliveries'][0].proofOfDelivery[type].filename = Key;
 			job['jobSpecification']['deliveries'][0].proofOfDelivery[type].location = result.Location;
 			console.log(job.jobSpecification.deliveries);
 			await job.save();
@@ -392,9 +392,7 @@ const uploadDeliveryPhoto = async (req, res, next) => {
 		//update the signature image in job document
 		if (job) {
 			const location = req.file.location;
-			job['jobSpecification']['deliveries'][0].proofOfDelivery.photo.filename = `${shorthash.unique(
-				file.originalname
-			)}.jpg`;
+			job['jobSpecification']['deliveries'][0].proofOfDelivery.photo.filename = req.file.key;
 			job['jobSpecification']['deliveries'][0].proofOfDelivery.photo.location = location;
 			console.log(job.jobSpecification.deliveries);
 			await job.save();
@@ -414,6 +412,21 @@ const uploadDeliveryPhoto = async (req, res, next) => {
 	}
 };
 
+const downloadDeliveryProof = async (req, res, next) => {
+	try {
+		const { filename } = req.body;
+		console.log(filename)
+		const img = await getBase64Image(filename, S3_BUCKET_NAMES.DOCUMENTS);
+		res.status(200).json(img)
+	} catch (err) {
+	    console.error(err)
+		return next({
+			status: 400,
+			message: err.message
+		});
+	}
+}
+
 module.exports = {
 	getDrivers,
 	createDriver,
@@ -423,5 +436,6 @@ module.exports = {
 	acceptJob,
 	progressJob,
 	uploadDeliverySignature,
-	uploadDeliveryPhoto
+	uploadDeliveryPhoto,
+	downloadDeliveryProof
 };
