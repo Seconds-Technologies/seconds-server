@@ -103,7 +103,7 @@ const login = async (req, res, next) => {
 				squarespace: squarespace.accessToken,
 				hubrise: hubrise.accessToken,
 				drivers,
-				settings,
+				settings: settings ? settings.toObject() : undefined,
 				message: 'You have logged in Successfully!'
 			});
 		} else {
