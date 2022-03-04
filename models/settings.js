@@ -1,5 +1,4 @@
 const mongoose = require("mongoose");
-const { DISPATCH_OPTIONS } = require('../constants');
 
 const settingsSchema = new mongoose.Schema({
 	clientId: {
@@ -8,7 +7,7 @@ const settingsSchema = new mongoose.Schema({
 	},
 	defaultDispatch: {
 		type: String,
-		enum: DISPATCH_OPTIONS
+		enum: []
 	},
 	sms: {
 		type: mongoose.Schema.Types.Boolean,
@@ -45,5 +44,3 @@ const settingsSchema = new mongoose.Schema({
 		default: "eta"
 	}
 });
-
-module.exports = settingsSchema;

@@ -1,5 +1,5 @@
 const mongoose = require('mongoose')
-const { catalogSchema, userSchema, jobSchema, driverSchema } = require('@seconds-technologies/database_schemas')
+const { catalogSchema, userSchema, jobSchema, driverSchema, settingsSchema } = require('@seconds-technologies/database_schemas')
 
 mongoose.set("debug", false);
 mongoose.Promise = Promise;
@@ -13,4 +13,4 @@ module.exports.PostCode = mongoose.model("Postcode", require("./region"));
 module.exports.Job = mongoose.model('Job', jobSchema)
 module.exports.Driver = mongoose.model("Driver", driverSchema);
 module.exports.Catalog = mongoose.model('Catalog', catalogSchema);
-module.exports.Settings = mongoose.model('Settings', require('./settings'));
+module.exports.Settings = mongoose.model('Settings', settingsSchema);
