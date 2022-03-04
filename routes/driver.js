@@ -14,6 +14,7 @@ const router = express.Router();
 
 router.post('/verify', verifyDriver);
 router.post('/login', login);
+//TODO - test with 'authenticateUser' middleware
 router.patch('/accept', acceptJob);
 router.patch('/update-job', progressJob);
 router.post('/upload-signature', uploadDeliverySignature);

@@ -23,6 +23,7 @@ const paymentRoutes = require('./routes/payments');
 const stripeRoutes = require('./routes/stripe');
 const subscriptionRoutes = require('./routes/subscriptions');
 const driverRoutes = require('./routes/driver');
+const settingsRoutes = require('./routes/settings');
 
 const app = express();
 app.use(logger('dev'));
@@ -55,15 +56,21 @@ app.get('/server', (req, res) => {
 		message: 'Welcome to Shopify!',
 	});
 });
+// CORE ROUTES
 app.use('/uploads', express.static('uploads'));
 app.use('/server/auth', authRoutes);
 app.use('/server/main', authenticateUser, mainRoutes); //TODO - Correct path for redux thunks in client-end
-app.use('/server/shopify', authenticateUser, shopifyRoutes);
 app.use('/server/driver', driverRoutes);
+app.use('/server/settings', authenticateUser, settingsRoutes);
+
+// E-COMMERCE ROUTES
 app.use('/server/square', squareRoutes)
+app.use('/server/shopify', authenticateUser, shopifyRoutes);
 app.use('/server/woocommerce', wooCommerceTimeout, woocommerceRoutes)
 app.use('/server/squarespace', squarespaceRoutes)
 app.use('/server/hubrise', hubriseRoutes)
+
+// PAYMENT ROUTES
 app.use('/server/payment', paymentRoutes);
 app.use('/server/subscription', subscriptionRoutes);
 

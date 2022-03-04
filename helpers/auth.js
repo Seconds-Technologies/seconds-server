@@ -76,7 +76,9 @@ const login = async (req, res, next) => {
 					verified
 				}
 			})
-			console.log(drivers)
+			// fetch settings
+			const settings = await db.Settings.findOne({clientId: _id });
+			console.log(settings)
 			return res.status(200).json({
 				id: _id,
 				firstname,
@@ -101,6 +103,7 @@ const login = async (req, res, next) => {
 				squarespace: squarespace.accessToken,
 				hubrise: hubrise.accessToken,
 				drivers,
+				settings,
 				message: 'You have logged in Successfully!'
 			});
 		} else {
