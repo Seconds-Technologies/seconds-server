@@ -13,3 +13,4 @@ module.exports.PostCode = mongoose.model("Postcode", require("./region"));
 module.exports.Job = mongoose.model('Job', jobSchema)
 module.exports.Driver = mongoose.model("Driver", driverSchema);
 module.exports.Catalog = mongoose.model('Catalog', catalogSchema);
+module.exports.Settings = mongoose.model('Settings', require('./settings'));
