@@ -37,9 +37,9 @@ router.get('/fetch-stripe-subscription', async (req, res, next) => {
 		if (user['subscriptionId']) {
 			const subscription = await stripe.subscriptions.retrieve(user['subscriptionId']);
 			subscription && subscription.items.data && console.log(subscription.items.data[0]);
-			res.status(200).json({ id: subscription.id, status: subscription.status, items: subscription.items.data });
+			res.status(200).json({ id: subscription.id, name: subscription.items.data[0].plan.nickname, status: subscription.status, items: subscription.items.data });
 		} else {
-			res.status(200).json({ id: '', status: null });
+			res.status(200).json({ id: '', name: '', status: null, items: [] });
 		}
 	} catch (e) {
 		console.error(e);
@@ -78,6 +78,7 @@ router.get('/fetch-invoices', async (req, res, next) => {
 			customer: user['stripeCustomerId'],
 			limit: 5
 		});
+		console.log(invoices.data)
 		res.status(200).json(invoices.data);
 	} catch (err) {
 		console.error(err)
@@ -94,7 +95,7 @@ router.post('/create-checkout-session', async (req, res) => {
 	console.log('LOOKUP KEY:', lookup_key);
 	console.log('--------------------------------------');
 	const prices = await stripe.prices.list({
-		lookup_keys: [lookup_key, `${lookup_key}-commission`, 'multi-drop-commission'],
+		lookup_keys: [lookup_key, `${lookup_key}-commission`, 'multi-drop-commission', 'sms-commission'],
 		expand: ['data.product']
 	});
 	console.log(prices);
@@ -117,7 +118,8 @@ router.post('/create-checkout-session', async (req, res) => {
 				quantity: 1
 			},
 			{ price: prices.data[1].id },
-			{ price: prices.data[2].id }
+			{ price: prices.data[2].id },
+			{ price: prices.data[3].id }
 		],
 		mode: 'subscription',
 		subscription_data: {

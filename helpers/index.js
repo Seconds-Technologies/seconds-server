@@ -126,7 +126,8 @@ async function handleCanceledSubscription(subscription) {
 				{ new: true }
 			);
 			console.log('------------------------------------');
-			console.log('updated user:', user);
+			console.log('New subscription details');
+			console.table({id: user.subscriptionId, plan: user.subscriptionPlan})
 			console.log('------------------------------------');
 			return 'Subscription is canceled';
 		} else {
