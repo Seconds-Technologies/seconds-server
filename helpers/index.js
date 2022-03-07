@@ -88,7 +88,8 @@ async function handleActiveSubscription(subscription) {
 					subscriptionPlan: data[0].price.lookup_key,
 					'subscriptionItems.standardMonthly': data[0].id,
 					'subscriptionItems.standardCommission': data[1].id,
-					'subscriptionItems.multiDropCommission': data[2].id
+					'subscriptionItems.multiDropCommission': data[2].id,
+					'subscriptionItems.smsCommission': data[3].id
 				},
 				{ new: true }
 			);
@@ -121,7 +122,8 @@ async function handleCanceledSubscription(subscription) {
 					subscriptionId: '', subscriptionPlan: '',
 					'subscriptionItems.standardMonthly': '',
 					'subscriptionItems.standardCommission': '',
-					'subscriptionItems.multiDropCommission': ''
+					'subscriptionItems.multiDropCommission': '',
+					'subscriptionItems.smsCommission': ''
 				},
 				{ new: true }
 			);
