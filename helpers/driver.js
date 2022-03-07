@@ -291,7 +291,7 @@ const acceptJob = async (req, res, next) => {
 		const job = await db.Job.findById(jobId);
 		if (driver && job) {
 			job.driverInformation.id = driver._id;
-			job.driverInformation.name = `${driver.fistname} ${driver.lastname}`;
+			job.driverInformation.name = `${driver.firstname} ${driver.lastname}`;
 			job.driverInformation.phone = driver.phone;
 			job.driverInformation.transport = driver.vehicle;
 			job.status = STATUS.DISPATCHING;
