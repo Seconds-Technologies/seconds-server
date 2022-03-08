@@ -36,7 +36,6 @@ const getDrivers = async (req, res, next) => {
 		const user = await db.User.findOne({ email });
 		if (user) {
 			let drivers = await db.Driver.find({ clientIds: user['_id'] });
-			console.log(drivers);
 			drivers = drivers.map(driver => {
 				let {
 					_id: id,
