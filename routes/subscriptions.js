@@ -64,6 +64,11 @@ router.get('/cancel-subscription', async (req, res, next) => {
 				subscriptionId: subscription.id,
 				cancelDate: subscription.cancel_at,
 			});
+		} else {
+			return next({
+				status: 404,
+				message: `No user found with email address ${email}`
+			})
 		}
 	} catch (err) {
 		console.error(err);
