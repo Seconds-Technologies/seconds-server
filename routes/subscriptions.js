@@ -50,17 +50,21 @@ router.get('/fetch-stripe-subscription', async (req, res, next) => {
 	}
 });
 
-router.post('/cancel-subscription', async (req, res, next) => {
+router.get('/cancel-subscription', async (req, res, next) => {
 	try {
-		const { email } = req.body;
+		const { email } = req.query;
+		console.log(email)
 		// get the subscription id from the customer
-		const { subscriptionId } = db.User.findOne({ email: email });
-		const deleted = await stripe.subscriptions.del(subscriptionId);
-		res.status(200).json({
-			stripeSubscriptionId: deleted.id,
-			cancelledAt: moment(deleted.canceled_at).toISOString(),
-			status: deleted.status
-		});
+		const user = await db.User.findOne({ email: email });
+		console.log("User", user)
+		if (user) {
+			const subscription = await stripe.subscriptions.update(user.subscriptionId, { cancel_at_period_end: true });
+			console.log(subscription)
+			res.status(200).json({
+				subscriptionId: subscription.id,
+				cancelDate: subscription.cancel_at,
+			});
+		}
 	} catch (err) {
 		console.error(err);
 		return next ({
