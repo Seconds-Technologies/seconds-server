@@ -28,7 +28,7 @@ const {
 	synchronizeUserInfo
 } = require('../helpers/main');
 
-const { getDrivers, createDriver, updateDriver } = require('../helpers/driver');
+const { getDrivers, createDriver, updateDriver, deleteDrivers } = require('../helpers/driver');
 
 router.post('/token', generateSecurityKeys);
 router.post('/update-profile', updateProfile);
@@ -39,5 +39,6 @@ router.get('/sync-user', synchronizeUserInfo);
 router.get('/drivers', getDrivers)
 router.post('/create-driver', createDriver);
 router.post('/update-driver', updateDriver);
+router.patch('/delete-drivers', deleteDrivers)
 
 module.exports = router;
