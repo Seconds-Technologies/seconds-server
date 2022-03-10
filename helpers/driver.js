@@ -287,23 +287,23 @@ const deleteDrivers = async (req, res, next) => {
 	try {
 		const { email } = req.query;
 		const driverIds = req.body;
-		console.log(driverIds)
+		console.log(driverIds);
 		const user = await db.User.findOne({ email });
-		if (user){
-			const drivers = await db.Driver.deleteMany({_id: driverIds, clientIds: user._id}, {new: true})
-			console.log(drivers)
-			res.status(200).json({message: "SUCCESS"})
+		if (user) {
+			const drivers = await db.Driver.deleteMany({ _id: driverIds, clientIds: user._id }, { new: true });
+			console.log(drivers);
+			res.status(200).json({ message: 'SUCCESS' });
 		} else {
 			return next({
 				status: 404,
 				message: `No user found with email address ${email}`
-			})
+			});
 		}
 	} catch (err) {
-	    console.error(err)
+		console.error(err);
 		res.status(500).json({ message: err.message });
 	}
-}
+};
 
 const acceptJob = async (req, res, next) => {
 	try {
@@ -436,17 +436,42 @@ const uploadDeliveryPhoto = async (req, res, next) => {
 const downloadDeliveryProof = async (req, res, next) => {
 	try {
 		const { filename } = req.body;
-		console.log(filename)
+		console.log(filename);
 		const img = await getBase64Image(filename, S3_BUCKET_NAMES.DOCUMENTS);
-		res.status(200).json(img)
+		res.status(200).json(img);
 	} catch (err) {
-	    console.error(err)
+		console.error(err);
 		return next({
 			status: 400,
 			message: err.message
 		});
 	}
-}
+};
+
+const updateDriverLocation = async (req, res, next) => {
+	try {
+		const { driverId } = req.query;
+		const { longitude, latitude } = req.body;
+		console.table({ driverId, longitude, latitude });
+		const driver = await db.Driver.findById(driverId);
+		if (driver && longitude && latitude) {
+			await db.Job.updateMany(
+				{ 'driverInformation.id': driverId, status: { $in: [STATUS.DISPATCHING, STATUS.EN_ROUTE] } },
+				{
+					'driverInformation.location': {
+						type: 'Point',
+						coordinates: [longitude, latitude]
+					}
+				},
+				{new: true}
+			);
+		}
+		res.status(200).json({ message: 'SUCCESS' });
+	} catch (err) {
+		console.error(err);
+		res.status(500).json({ message: err.message });
+	}
+};
 
 module.exports = {
 	getDrivers,
@@ -459,5 +484,6 @@ module.exports = {
 	progressJob,
 	uploadDeliverySignature,
 	uploadDeliveryPhoto,
-	downloadDeliveryProof
+	downloadDeliveryProof,
+	updateDriverLocation
 };
