@@ -6,7 +6,8 @@ const {
 	progressJob,
 	uploadDeliverySignature,
 	uploadDeliveryPhoto,
-	downloadDeliveryProof
+	downloadDeliveryProof,
+	updateDriverLocation
 } = require('../helpers/driver');
 const { upload } = require('../helpers');
 const { S3_BUCKET_NAMES } = require('../constants');
@@ -20,4 +21,5 @@ router.patch('/update-job', progressJob);
 router.post('/upload-signature', uploadDeliverySignature);
 router.post('/upload-photo', upload(S3_BUCKET_NAMES.DOCUMENTS).single('img'), uploadDeliveryPhoto);
 router.post('/download-photo', downloadDeliveryProof);
+router.patch('/update-location', updateDriverLocation)
 module.exports = router;
