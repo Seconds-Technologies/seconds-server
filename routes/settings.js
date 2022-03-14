@@ -28,4 +28,29 @@ router.patch('/business-workflow', async (req, res, next) => {
 	}
 })
 
+router.patch('/update-providers', async(req, res, next) => {
+	try {
+		const { email } = req.query;
+		console.log(req.body)
+		const user = await db.User.findOne({ email })
+		if (user) {
+			// use the clientId to search for their settings
+			let settings = await db.Settings.findOneAndUpdate({clientId: user['_id']}, {activeFleetProviders: req.body }, {new: true})
+			console.log(settings.activeFleetProviders)
+			res.status(200).json({message: "Providers updated successfully", ...settings.toObject()['activeFleetProviders']})
+		} else {
+			return next({
+				status: 404,
+				message: "Could not find user with the email " + email
+			})
+		}
+	} catch (err) {
+		console.error(err)
+		return next({
+			status: err.status ? err.status : 500,
+			message: err.message
+		})
+	}
+})
+
 module.exports = router
