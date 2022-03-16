@@ -316,6 +316,10 @@ const acceptJob = async (req, res, next) => {
 			job.driverInformation.phone = driver.phone;
 			job.driverInformation.transport = driver.vehicle;
 			job.status = STATUS.DISPATCHING;
+			job.trackingHistory.push({
+				timestamp: moment().unix(),
+				status: STATUS.DISPATCHING
+			})
 			await job.save();
 			return res.status(200).json(job);
 		} else {
@@ -337,7 +341,18 @@ const acceptJob = async (req, res, next) => {
 const progressJob = async (req, res, next) => {
 	try {
 		const { jobId, status } = req.body;
-		const job = await db.Job.findByIdAndUpdate(jobId, { status }, { new: true });
+		let update = {
+			$set: { status },
+			$push: {
+				trackingHistory: [
+					{
+						timestamp: moment().unix(),
+						status
+					}
+				]
+			}
+		};
+		const job = await db.Job.findByIdAndUpdate(jobId, update, { new: true });
 		// check the driver's job status if it needs to be changed
 		if (job) {
 			await checkDriverStatus(job['driverInformation'].id);
