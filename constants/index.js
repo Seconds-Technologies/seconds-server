@@ -13,7 +13,13 @@ exports.S3_BUCKET_NAMES = {
 }
 
 exports.DRIVER_STATUSES = ['AVAILABLE', 'BUSY', 'OFFLINE']
-exports.VEHICLES = ['BIC', 'MTB', 'CGB', 'CAR', 'VAN']
+exports.VEHICLES_CODES = ['BIC', 'MTB', 'CGB', 'CAR', 'VAN']
+
+exports.ROUTE_OPTIMIZATION_OBJECTIVES = {
+	duration: 'less_duration',
+	mileage: 'less_mileage',
+	cost: 'minimize_cost'
+};
 
 exports.DRIVER_STATUS = {
 	AVAILABLE: "AVAILABLE",

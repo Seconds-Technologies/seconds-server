@@ -25,20 +25,27 @@ const {
 	updateDeliveryHours,
 	uploadProfileImage,
 	updateDeliveryStrategies,
-	synchronizeUserInfo
+	synchronizeUserInfo,
+	getOptimizedRoute,
+	sendRouteOptimization
 } = require('../helpers/main');
 
 const { getDrivers, createDriver, updateDriver, deleteDrivers } = require('../helpers/driver');
 
 router.post('/token', generateSecurityKeys);
+// user
 router.post('/update-profile', updateProfile);
 router.post('/update-delivery-hours', updateDeliveryHours);
 router.post('/update-delivery-strategies', updateDeliveryStrategies);
 router.post('/upload', upload('seconds-profile-pictures').single('img'), uploadProfileImage);
 router.get('/sync-user', synchronizeUserInfo);
-router.get('/drivers', getDrivers)
+//drivers
+router.get('/drivers', getDrivers);
 router.post('/create-driver', createDriver);
 router.post('/update-driver', updateDriver);
-router.patch('/delete-drivers', deleteDrivers)
+router.patch('/delete-drivers', deleteDrivers);
+// jobs
+router.post('/optimise-route', sendRouteOptimization);
+router.get('/optimise-route', getOptimizedRoute);
 
 module.exports = router;

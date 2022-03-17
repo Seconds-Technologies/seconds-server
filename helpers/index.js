@@ -5,6 +5,7 @@ const multer = require('multer');
 const multerS3 = require('multer-s3');
 const shorthash = require('shorthash');
 const moment = require('moment');
+const { VEHICLE_CODES } = require('@seconds-technologies/database_schemas/constants');
 
 function genApiKey() {
 	let apiKey = '';
@@ -22,6 +23,31 @@ function genApiKey() {
 function encode(data) {
 	let buf = Buffer.from(data);
 	return buf.toString('base64');
+}
+
+function checkGeolocationProximity(depot, pickup){
+	console.log("Longitude")
+	console.log('-----------------------------------------------');
+	console.log(Number(depot[0]).toFixed(2))
+	console.log(Number(pickup[0]).toFixed(2))
+	let lngMatch = Number(depot[0]).toFixed(2) === Number(pickup[0]).toFixed(2)
+	console.log("Latitude")
+	console.log('-----------------------------------------------');
+	console.log(Number(depot[1]).toPrecision(3))
+	console.log(Number(pickup[1]).toPrecision(3))
+	let latMatch = Number(depot[1]).toPrecision(3) === Number(pickup[1]).toPrecision(3)
+	return lngMatch && latMatch
+}
+
+function countVehicles(drivers){
+	const counts = [0,0,0,0,0]
+	for (let code of VEHICLE_CODES){
+		drivers.forEach(({vehicle}, index) => {
+			if (code === vehicle)
+				counts[index] += 1
+		})
+	}
+	return counts
 }
 
 async function getBase64Image(filename, bucketName) {
@@ -141,6 +167,8 @@ async function handleCanceledSubscription(subscription) {
 	}
 }
 
+const delay = ms => new Promise(resolve => setTimeout(resolve, ms))
+
 const upload = bucket =>
 	multer({
 		storage: multerS3({
@@ -164,5 +192,8 @@ module.exports = {
 	filterAndRemove,
 	filterAndUpdateProducts,
 	handleActiveSubscription,
-	handleCanceledSubscription
+	handleCanceledSubscription,
+	checkGeolocationProximity,
+	countVehicles,
+	delay,
 };
