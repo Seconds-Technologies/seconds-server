@@ -1,10 +1,16 @@
 const db = require('../models/index');
 const crypto = require('crypto');
+const axios = require('axios');
 const shorthash = require('shorthash');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const { getBase64Image } = require('../helpers');
 const moment = require('moment');
-const { S3_BUCKET_NAMES } = require('../constants');
+const { S3_BUCKET_NAMES, ROUTE_OPTIMIZATION_OBJECTIVES } = require('../constants');
+const { checkGeolocationProximity, countVehicles, delay } = require('./index');
+const { VEHICLE_CODES } = require('@seconds-technologies/database_schemas/constants');
+const { nanoid } = require('nanoid');
+const optimizationAxios = axios.create();
+optimizationAxios.defaults.headers.common['x-api-key'] = process.env.LOGISTICSOS_API_KEY;
 
 const generateSecurityKeys = async (req, res, next) => {
 	// generate the apiKey using random byte sequences
@@ -226,11 +232,206 @@ const synchronizeUserInfo = async (req, res, next) => {
 	}
 };
 
+/**
+ * Optimize Orders - returns a list of optimized routes for multiple drivers/vehicles
+ * @constructor
+ * @param req - request object
+ * @param res - response object
+ * @returns {Promise<*>}
+ */
+const sendRouteOptimization = async (req, res) => {
+	try {
+		const { email } = req.query;
+		const user = await db.User.findOne({ email });
+		console.log('USER found', !!user);
+		const { orderNumbers, params } = req.body;
+		if (user) {
+			// retrieve the full order documents from db using orderNumbers
+			const orders = await db.Job.find({ 'jobSpecification.orderNumber': { $in: orderNumbers } });
+			console.log('******************************************');
+			console.table({ orderCount: orders.length, ...params });
+			console.log('******************************************');
+			// iterate through each order and re-structure the payload to match logisticsOS "order" payload
+			const ordersPayload = Array.from(orders).flatMap(
+				({ jobSpecification: { orderNumber, deliveries, pickupStartTime } }) =>
+					deliveries.flatMap(({ dropoffLocation, dropoffEndTime }) => {
+						return {
+							id: orderNumber,
+							geometry: {
+								zipcode: dropoffLocation.postcode,
+								coordinates: {
+									lon: dropoffLocation.longitude,
+									lat: dropoffLocation.latitude
+								},
+								curb: false
+							},
+							service: {
+								dropoff_quantities: [1]
+							},
+							time_window: {
+								start: moment(pickupStartTime).unix(),
+								end: moment(dropoffEndTime).unix()
+							}
+						};
+					})
+			);
+			// log final result to confirm
+			console.log('-----------------------------------------------');
+			console.log(ordersPayload);
+			console.log('-----------------------------------------------');
+			// check pickup address is the same across all deliveries
+			let depotCoords = user['address'].geolocation.coordinates;
+			let depotPostcode = user['address'].postcode;
+			let startDepot = Array.from(orders).every(({ jobSpecification: { pickupLocation } }) => {
+				console.log([pickupLocation.longitude, pickupLocation.latitude]);
+				let postcodeMatch = pickupLocation.postcode === depotPostcode;
+				// compares the equality of both the pickup coords and the depot coords to 2 decimal places
+				let geolocationMatch = checkGeolocationProximity(depotCoords, [
+					pickupLocation.longitude,
+					pickupLocation.latitude
+				]);
+				return postcodeMatch && geolocationMatch;
+			});
+			let start_depots = startDepot
+				? [
+						{
+							id: user.company,
+							geometry: {
+								zipcode: user.address.postcode,
+								coordinates: {
+									lon: user.address.geolocation.coordinates[0],
+									lat: user.address.geolocation.coordinates[1]
+								},
+								curb: false
+							},
+							service_duration: 0,
+							time_window: {
+								start: moment(params.startFrom).unix(),
+								end: moment(params.endFrom).unix()
+							}
+						}
+				  ]
+				: [];
+			let breaks =
+				moment(params.breakPeriod.start).isValid() && moment(params.breakPeriod.end).isValid()
+					? [
+							{
+								id: params.breakPeriod.label,
+								time_window: {
+									start: moment(params.breakPeriod.start).unix(),
+									end: moment(params.breakPeriod.end).unix()
+								},
+								duration: params.breakPeriod.duration
+							}
+					  ]
+					: [];
+			let objectives = Object.entries(params.objectives)
+				.filter(([_, value]) => value)
+				.map(([key, _]) => ROUTE_OPTIMIZATION_OBJECTIVES[key]);
+			const drivers = await db.Driver.find({ _id: { $in: params.driverIds } });
+			// count drivers per vehicle
+			let counts = countVehicles(drivers);
+			console.log(counts);
+			const vehicle_types = [];
+			counts.forEach((count, index) => {
+				if (count) {
+					vehicle_types.push({
+						id: `${VEHICLE_CODES[index]}-${nanoid(12)}`,
+						count,
+						max_late_time: 0,
+						max_orders_per_route: 10,
+						avoid_wait_time: false,
+						use_all_vehicles: false,
+						depots: {
+							start_depot: 'any'
+						},
+						...(params.breakPeriod.label && { break_ids: [params.breakPeriod.label] })
+					});
+				}
+			});
+			const optRequest = {
+				start_depots,
+				orders: ordersPayload,
+				breaks,
+				objectives,
+				vehicle_types,
+				units: {
+					distance: 'kilometer',
+					duration: 'minute'
+				}
+			};
+			console.log(optRequest);
+			let URL = `${process.env.LOGISTICSOS_BASE_URL}/vrp`;
+			let config = { headers: { 'x-api-key': process.env.LOGISTICSOS_API_KEY } };
+			const response = (await optimizationAxios.post(URL, optRequest, config)).data;
+			console.log('************************************************');
+			console.log(response);
+			console.log('************************************************');
+			res.status(200).json({ message: 'SUCCESS', ...response });
+		}
+	} catch (err) {
+		console.error(err);
+		if (err.message) {
+			return res.status(err.status).json({
+				error: err
+			});
+		}
+		return res.status(500).json({
+			error: {
+				code: 500,
+				message: 'Unknown error occurred!'
+			}
+		});
+	}
+};
+
+const getOptimizedRoute = async (req, res, next) => {
+	try {
+		const { job_id, num_orders } = req.query;
+		const URL = `${process.env.LOGISTICSOS_BASE_URL}/vrp`;
+		const config = { headers: { 'x-api-key': process.env.LOGISTICSOS_API_KEY }, params: { job_id } };
+		console.log(config);
+		let result;
+		do {
+			result = (await new Promise(resolve => setTimeout(() => resolve(axios.get(URL, config)), 5000))).data;
+			console.log(result.status);
+			console.log(result.status === 'SUCCEED');
+		} while (result.status !== 'SUCCEED' && result.status !== 'FAILED');
+		/********************************************/
+		console.log(result);
+		if (result.status === 'FAILED') {
+			return next({
+				status: 400,
+				message: 'Route optimization failed'
+			});
+		} else if (result['plan_summary'].unassigned === num_orders) {
+			return next({
+				status: 400,
+				message: 'Your orders could not be optimized'
+			});
+		} else if (result['plan_summary'].unassigned) {
+			return next({
+				status: 400,
+				message: `The following orders could not be optimized: ${result['unassigned_stops'].unreachable}`
+			});
+		} else {
+			// all orders were assigned
+			const routes = result.routes;
+			return res.status(200).json({ message: 'SUCCESS', routes });
+		}
+	} catch (err) {
+		console.error(err);
+		res.status(500).json({ message: err.message });
+	}
+};
+
 module.exports = {
 	generateSecurityKeys,
 	updateProfile,
 	updateDeliveryHours,
 	uploadProfileImage,
 	updateDeliveryStrategies,
-	synchronizeUserInfo
+	synchronizeUserInfo,
+	sendRouteOptimization,
+	getOptimizedRoute
 };
