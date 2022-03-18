@@ -169,8 +169,7 @@ async function handleCanceledSubscription(subscription) {
 
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms))
 
-const upload = bucket =>
-	multer({
+const upload = bucket => multer({
 		storage: multerS3({
 			s3: S3,
 			bucket,
