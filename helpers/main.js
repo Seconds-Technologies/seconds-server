@@ -328,7 +328,7 @@ const sendRouteOptimization = async (req, res) => {
 			let objectives = Object.entries(params.objectives)
 				.filter(([_, value]) => value)
 				.map(([key, _]) => ROUTE_OPTIMIZATION_OBJECTIVES[key]);
-			const drivers = await db.Driver.find({ _id: { $in: params.driverIds } });
+			const drivers = await db.Driver.find({ vehicle: { $in: params.vehicles } });
 			// count drivers per vehicle
 			let counts = countVehicles(drivers);
 			console.log(counts);
@@ -397,7 +397,7 @@ const getOptimizedRoute = async (req, res, next) => {
 			console.log(result.status);
 			console.log(result.status === 'SUCCEED');
 		} while (result.status !== 'SUCCEED' && result.status !== 'FAILED');
-		/********************************************/
+		/***********************************************************************************************/
 		console.log(result);
 		if (result.status === 'FAILED') {
 			return next({
