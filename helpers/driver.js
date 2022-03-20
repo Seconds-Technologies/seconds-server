@@ -355,6 +355,20 @@ const progressJob = async (req, res, next) => {
 		const job = await db.Job.findByIdAndUpdate(jobId, update, { new: true });
 		// check the driver's job status if it needs to be changed
 		if (job) {
+			const user = await db.User.findById(job.clientId)
+			const settings = await db.Settings.findOne({clientId: job.clientId})
+			let smsEnabled = settings ? settings.smsEnabled : false
+			if (status === STATUS.EN_ROUTE) {
+				let template = `Your ${user.company} order has been picked up and the driver is on his way. Track your delivery here: ${process.env.TRACKING_BASE_URL}/${job._id}`;
+				sendSMS(job.jobSpecification.deliveries[0].dropoffLocation.phoneNumber, template, smsEnabled).then(() =>
+					console.log('SMS sent successfully!')
+				);
+			} else if (status === STATUS.COMPLETED){
+				const template = `Your ${user.company} order has been delivered. Thanks for ordering with ${user.company}`;
+				sendSMS(job.jobSpecification.deliveries[0].dropoffLocation.phoneNumber, template, smsEnabled).then(() =>
+					console.log('SMS sent successfully!')
+				);
+			}
 			await checkDriverStatus(job['driverInformation'].id);
 			return res.status(200).json(job);
 		} else {
