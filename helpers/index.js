@@ -26,27 +26,27 @@ function encode(data) {
 }
 
 function checkGeolocationProximity(depot, pickup){
-	console.log("Longitude")
+	/*console.log("Longitude")
 	console.log('-----------------------------------------------');
 	console.log(Number(depot[0]).toFixed(2))
-	console.log(Number(pickup[0]).toFixed(2))
+	console.log(Number(pickup[0]).toFixed(2))*/
 	let lngMatch = Number(depot[0]).toFixed(2) === Number(pickup[0]).toFixed(2)
-	console.log("Latitude")
+	/*console.log("Latitude")
 	console.log('-----------------------------------------------');
 	console.log(Number(depot[1]).toPrecision(3))
-	console.log(Number(pickup[1]).toPrecision(3))
+	console.log(Number(pickup[1]).toPrecision(3))*/
 	let latMatch = Number(depot[1]).toPrecision(3) === Number(pickup[1]).toPrecision(3)
 	return lngMatch && latMatch
 }
 
 function countVehicles(drivers){
 	const counts = [0,0,0,0,0]
-	for (let code of VEHICLE_CODES){
-		drivers.forEach(({vehicle}, index) => {
+	VEHICLE_CODES.forEach((code, codeIndex) => {
+		drivers.forEach(({vehicle}) => {
 			if (code === vehicle)
-				counts[index] += 1
+				counts[codeIndex] += 1
 		})
-	}
+	})
 	return counts
 }
 

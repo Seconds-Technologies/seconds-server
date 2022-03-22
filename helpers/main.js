@@ -329,9 +329,10 @@ const sendRouteOptimization = async (req, res) => {
 				.filter(([_, value]) => value)
 				.map(([key, _]) => ROUTE_OPTIMIZATION_OBJECTIVES[key]);
 			const drivers = await db.Driver.find({ vehicle: { $in: params.vehicles }, verified: true });
+			console.log(drivers)
 			// count drivers per vehicle
 			let counts = countVehicles(drivers);
-			console.log(counts);
+			console.table({ counts });
 			const vehicle_types = [];
 			counts.forEach((count, index) => {
 				if (count) {
@@ -398,8 +399,8 @@ const getOptimizedRoute = async (req, res, next) => {
 			console.log(result.status === 'SUCCEED');
 		} while (result.status !== 'SUCCEED' && result.status !== 'FAILED');
 		/***********************************************************************************************/
-		console.log(result);
 		if (result.status === 'FAILED') {
+			console.log(result);
 			return next({
 				status: 400,
 				message: 'Route optimization failed'
@@ -415,6 +416,7 @@ const getOptimizedRoute = async (req, res, next) => {
 				message: `The following orders could not be optimized: ${result['unassigned_stops'].unreachable}`
 			});
 		} else {
+			result.routes.forEach(route => console.log(route))
 			// all orders were assigned
 			const routes = result.routes;
 			return res.status(200).json({ message: 'SUCCESS', routes });
