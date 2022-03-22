@@ -328,7 +328,7 @@ const sendRouteOptimization = async (req, res) => {
 			let objectives = Object.entries(params.objectives)
 				.filter(([_, value]) => value)
 				.map(([key, _]) => ROUTE_OPTIMIZATION_OBJECTIVES[key]);
-			const drivers = await db.Driver.find({ vehicle: { $in: params.vehicles } });
+			const drivers = await db.Driver.find({ vehicle: { $in: params.vehicles }, verified: true });
 			// count drivers per vehicle
 			let counts = countVehicles(drivers);
 			console.log(counts);
@@ -336,12 +336,12 @@ const sendRouteOptimization = async (req, res) => {
 			counts.forEach((count, index) => {
 				if (count) {
 					vehicle_types.push({
-						id: `${VEHICLE_CODES[index]}-${nanoid(12)}`,
+						id: `${VEHICLE_CODES[index]}`,
 						count,
 						max_late_time: 0,
 						max_orders_per_route: 10,
 						avoid_wait_time: false,
-						use_all_vehicles: false,
+						use_all_vehicles: true,
 						depots: {
 							start_depot: 'any'
 						},
