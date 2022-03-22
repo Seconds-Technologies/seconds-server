@@ -3,11 +3,14 @@ const moment = require('moment');
 const jwt = require('jsonwebtoken');
 const sendSMS = require('../services/sms');
 const { customAlphabet } = require('nanoid/async');
-const { STATUS } = require('@seconds-technologies/database_schemas/constants');
+const { STATUS, VEHICLE_CODES_MAP } = require('@seconds-technologies/database_schemas/constants');
 const { genApiKey, getBase64Image } = require('./index');
 const { DRIVER_STATUS, S3, S3_BUCKET_NAMES } = require('../constants');
 const shorthash = require('shorthash');
 const nanoid = customAlphabet('1234567890', 6);
+const { Client } = require("@googlemaps/google-maps-services-js");
+
+const GMapsClient = new Client();
 
 async function checkDriverStatus(driverId) {
 	try {
@@ -26,6 +29,35 @@ async function checkDriverStatus(driverId) {
 		}
 	} catch (err) {
 		console.error(err);
+		throw err;
+	}
+}
+
+async function calculateDeliveryETA(origin, destination, mode) {
+	console.log('ORIGIN:', origin);
+	console.log('DESTINATION:', destination);
+	try {
+		const distanceMatrix = (
+			await GMapsClient.distancematrix({
+				params: {
+					origins: [origin],
+					destinations: [destination],
+					key: process.env.GOOGLE_MAPS_API_KEY,
+					units: 'imperial',
+					mode
+				},
+				responseType: 'json'
+			})
+		).data;
+		console.log(distanceMatrix.rows[0].elements[0]);
+		let duration = Number(distanceMatrix.rows[0].elements[0].duration.value);
+		console.log('================================================');
+		console.log("DURATION", duration)
+		const newEta = moment().add(duration, 's').format()
+		console.log("NEW ETA", newEta)
+		console.log('================================================');
+		return newEta;
+	} catch (err) {
 		throw err;
 	}
 }
@@ -484,16 +516,24 @@ const updateDriverLocation = async (req, res, next) => {
 		console.table({ driverId, longitude, latitude });
 		const driver = await db.Driver.findById(driverId);
 		if (driver && longitude && latitude) {
-			await db.Job.updateMany(
-				{ 'driverInformation.id': driverId, status: { $in: [STATUS.DISPATCHING, STATUS.EN_ROUTE] } },
-				{
-					'driverInformation.location': {
-						type: 'Point',
-						coordinates: [longitude, latitude]
-					}
-				},
-				{new: true}
-			);
+			// find all the jobs under the driverId that are DISPATCHING or EN-ROUTE
+			const jobs = await db.Job.find({'driverInformation.id': driverId, status: { $in: [STATUS.DISPATCHING, STATUS.EN_ROUTE] }})
+			// console.log(jobs)
+			jobs.forEach(job => {
+				const origin = [latitude, longitude]
+				const destination = [job.jobSpecification.deliveries[0].dropoffLocation.latitude, job.jobSpecification.deliveries[0].dropoffLocation.longitude]
+				const mode = VEHICLE_CODES_MAP[job.vehicleType].travelMode
+				// calculate new delivery ETA
+				calculateDeliveryETA(origin, destination, mode)
+					.then(deliveryETA => {
+						job.driverInformation.location = {
+							type: 'Point',
+							coordinates: [longitude, latitude]
+						}
+						job.jobSpecification.deliveries[0].dropoffEndTime = deliveryETA
+						job.save().then(() => console.log(`ETA updated for Order ${job.jobSpecification.orderNumber}`))
+					})
+			})
 		}
 		res.status(200).json({ message: 'SUCCESS' });
 	} catch (err) {
