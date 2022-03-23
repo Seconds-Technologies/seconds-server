@@ -6,9 +6,8 @@ const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const { getBase64Image } = require('../helpers');
 const moment = require('moment');
 const { S3_BUCKET_NAMES, ROUTE_OPTIMIZATION_OBJECTIVES } = require('../constants');
-const { checkGeolocationProximity, countVehicles, delay } = require('./index');
 const { VEHICLE_CODES } = require('@seconds-technologies/database_schemas/constants');
-const { nanoid } = require('nanoid');
+const { checkGeolocationProximity, countVehicles } = require('./index');
 const optimizationAxios = axios.create();
 optimizationAxios.defaults.headers.common['x-api-key'] = process.env.LOGISTICSOS_API_KEY;
 
@@ -395,31 +394,25 @@ const getOptimizedRoute = async (req, res, next) => {
 		let result;
 		do {
 			result = (await new Promise(resolve => setTimeout(() => resolve(axios.get(URL, config)), 5000))).data;
-			console.log(result.status);
-			console.log(result.status === 'SUCCEED');
+			console.table({status: result.status});
 		} while (result.status !== 'SUCCEED' && result.status !== 'FAILED');
 		/***********************************************************************************************/
 		if (result.status === 'FAILED') {
 			console.log(result);
 			return next({
 				status: 400,
-				message: 'Route optimization failed'
+				message: 'Route optimization failed',
 			});
 		} else if (result['plan_summary'].unassigned === num_orders) {
 			return next({
 				status: 400,
-				message: 'Your orders could not be optimized'
-			});
-		} else if (result['plan_summary'].unassigned) {
-			return next({
-				status: 400,
-				message: `The following orders could not be optimized: ${result['unassigned_stops'].unreachable}`
+				message: 'Your orders could not be optimized. Please check that your time windows are not in the past'
 			});
 		} else {
 			result.routes.forEach(route => console.log(route))
-			// all orders were assigned
-			const routes = result.routes;
-			return res.status(200).json({ message: 'SUCCESS', routes });
+			// all orders were assigned;
+			console.log(result['unassigned_stops'].unreachable)
+			return res.status(200).json({ message: 'SUCCESS', routes: result.routes, unreachable: result['unassigned_stops'].unreachable });
 		}
 	} catch (err) {
 		console.error(err);
