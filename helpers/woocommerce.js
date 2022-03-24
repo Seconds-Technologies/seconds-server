@@ -18,7 +18,7 @@ const authorizeWoocommerceAccount = async (req, res, next) => {
 		let domain = store_url.endsWith('/') ? store_url.slice(0, -1) : store_url;
 		// check if an existing user has already integrated that woocommerce the domain
 		console.log(domain)
-		const numUsers = await db.User.countDocuments({"woocommerce.domain": domain})
+		const numUsers = await db.User.countDocuments({"woocommerce.domain": domain, "woocommerce.active": true})
 		console.log("Duplicate woocommerce domains", numUsers)
 		if (!numUsers) {
 			// update the woocommerce domain within the db
@@ -68,7 +68,8 @@ const callback = async (req, res) => {
 		const { user_id, consumer_key, consumer_secret } = req.body;
 		const user = await db.User.findOneAndUpdate({ 'email': user_id }, {
 			'woocommerce.consumerKey': consumer_key,
-			'woocommerce.consumerSecret': consumer_secret
+			'woocommerce.consumerSecret': consumer_secret,
+			'woocommerce.active': true
 		}, { new: true });
 		// create webhook subscription
 		let URL = `${user['woocommerce'].domain}/wp-json/wc/v3/webhooks`
