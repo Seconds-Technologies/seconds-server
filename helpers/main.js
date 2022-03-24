@@ -252,8 +252,8 @@ const sendRouteOptimization = async (req, res) => {
 			console.log('******************************************');
 			// iterate through each order and re-structure the payload to match logisticsOS "order" payload
 			const ordersPayload = Array.from(orders).flatMap(
-				({ jobSpecification: { orderNumber, deliveries, pickupStartTime } }) =>
-					deliveries.flatMap(({ dropoffLocation, dropoffEndTime }) => {
+				({ jobSpecification: { orderNumber, deliveries } }) =>
+					deliveries.flatMap(({ dropoffLocation, dropoffStartTime, dropoffEndTime }) => {
 						return {
 							id: orderNumber,
 							geometry: {
@@ -268,7 +268,7 @@ const sendRouteOptimization = async (req, res) => {
 								dropoff_quantities: [1]
 							},
 							time_window: {
-								start: moment(pickupStartTime).unix(),
+								start: dropoffStartTime ? moment(dropoffStartTime).unix() : moment().unix(),
 								end: moment(dropoffEndTime).unix()
 							}
 						};
