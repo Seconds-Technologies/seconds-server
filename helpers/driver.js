@@ -65,7 +65,8 @@ async function calculateDeliveryETA(origin, destination, mode) {
 const login = async (req, res, next) => {
 	try {
 		let driver = await db.Driver.findOne({
-			phone: req.body.phone
+			phone: req.body.phone,
+			verified: true,
 		});
 		if (driver) {
 			let { _id, clientIds, firstname, lastname, email, phone, vehicle, status, isOnline, apiKey } = driver;
