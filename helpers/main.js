@@ -422,6 +422,33 @@ const getOptimizedRoute = async (req, res, next) => {
 	}
 };
 
+const deleteOrders = async (req, res, next) => {
+	try {
+		const { email } = req.query;
+		const { orderNumbers } = req.body;
+		const user = await db.User.findOne({email})
+		if (user) {
+			const result = await db.Job.deleteMany({
+				clientId: user._id,
+				'jobSpecification.orderNumber': { $in: orderNumbers }
+			}, {returnOriginal: true})
+			console.log(result)
+			res.status(200).json({message: "SUCCESS"})
+		} else {
+			return next({
+				status: 404,
+				message: "No user found with that email address"
+			})
+		}
+	} catch (err) {
+	    console.error(err)
+		return next({
+			status: 500,
+			message: err.message
+		})
+	}
+}
+
 module.exports = {
 	generateSecurityKeys,
 	updateProfile,
@@ -430,5 +457,6 @@ module.exports = {
 	updateDeliveryStrategies,
 	synchronizeUserInfo,
 	sendRouteOptimization,
-	getOptimizedRoute
+	getOptimizedRoute,
+	deleteOrders
 };
