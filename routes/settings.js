@@ -53,7 +53,7 @@ async function createDailyBatchScheduler(isEnabled=false, user, settings) {
 	// create EventBridge Rule
 	const rule = await EventBridge.putRule({
 		Name: RuleName,
-		Description: `Daily batch scheduler for ${user.firstname} ${user.lastname}`,
+		Description: `[${String(process.env.ENVIRONMENT_MODE).toUpperCase()}] Daily batch scheduler for ${user.firstname} ${user.lastname}`,
 		ScheduleExpression,
 		State: isEnabled ? "ENABLED" : "DISABLED"
 	})
