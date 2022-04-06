@@ -65,7 +65,7 @@ async function createDailyBatchScheduler(isEnabled=false, user, settings) {
 			{
 				Arn: process.env.AWS_SQS_ARN,
 				Id: settings._id,
-				Input: { id: user._id }
+				Input: JSON.stringify({ id: user._id })
 			}
 		]
 	});
