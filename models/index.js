@@ -14,3 +14,4 @@ module.exports.Job = mongoose.model('Job', jobSchema)
 module.exports.Driver = mongoose.model("Driver", driverSchema);
 module.exports.Catalog = mongoose.model('Catalog', catalogSchema);
 module.exports.Settings = mongoose.model('Settings', settingsSchema);
+module.exports.Schedulers = mongoose.model('Scheduler', require("./scheduler"));

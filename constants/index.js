@@ -1,10 +1,29 @@
 const AWS = require("aws-sdk");
+const { EventBridge, ActivateEventSourceCommand } = require("@aws-sdk/client-eventbridge");
 
 exports.S3 = new AWS.S3({
 	apiVersion: '2006-03-01',
-	accessKeyId: process.env.S3_ACCESS_KEY,
-	secretAccessKey: process.env.S3_SECRET_KEY,
-	region: process.env.S3_BUCKET_REGION
+	accessKeyId: process.env.AWS_ACCESS_KEY,
+	secretAccessKey: process.env.AWS_SECRET_KEY,
+	region: process.env.AWS_REGION
+})
+
+/*exports.S3 = new S3Client({
+	region: process.env.AWS_REGION,
+	apiVersion:'2006-03-01',
+	credentials: {
+		accessKeyId: process.env.AWS_ACCESS_KEY,
+		secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
+	}
+});*/
+
+exports.EventBridge = new EventBridge({
+	apiVersion: "latest",
+	region: process.env.AWS_REGION,
+	credentials: {
+		accessKeyId: process.env.AWS_ACCESS_KEY,
+		secretAccessKey: process.env.AWS_SECRET_KEY,
+	}
 })
 
 exports.S3_BUCKET_NAMES = {
