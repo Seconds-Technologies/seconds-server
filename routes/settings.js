@@ -19,7 +19,7 @@ function generateCronExpression(deadline, deliveryHours) {
 	return { cron, deliveryDays }
 }
 
-async function createDailyBatchScheduler(user, settings) {
+async function createDailyBatchScheduler(isEnabled=false, user, settings) {
 	let h = Number(settings.autoBatch.daily.deadline.slice(0, 2));
 	let m = Number(settings.autoBatch.daily.deadline.slice(3));
 	console.table({h, m})
@@ -54,7 +54,8 @@ async function createDailyBatchScheduler(user, settings) {
 	const rule = await EventBridge.putRule({
 		Name: RuleName,
 		Description: `Daily batch scheduler for ${user.firstname} ${user.lastname}`,
-		ScheduleExpression
+		ScheduleExpression,
+		State: isEnabled ? "ENABLED" : "DISABLED"
 	})
 	console.log(rule)
 	// apply the target as the SQS queue which will trigger the lambda function to carry out the route-optimization + route assignment
@@ -78,7 +79,7 @@ async function createDailyBatchScheduler(user, settings) {
 	return rule
 }
 
-function createIncrementalBatchScheduler(user, settings) {
+function createIncrementalBatchScheduler(isEnabled=false, user, settings) {
 	return true;
 }
 
@@ -96,14 +97,13 @@ router.patch('/business-workflow', async (req, res, next) => {
 			console.log('-----------------------------------------------');
 			// if register the [ DAILY | INCREMENTAL ] batching scheduler using the specified time configurations
 			// define cases for creating the daily batch scheduler
-			const caseDaily1 = prevSettings && prevSettings.defaultBatchMode === BATCH_OPTIONS.INCREMENTAL && req.body.defaultBatchMode === BATCH_OPTIONS.DAILY
-			const caseDaily2 = !prevSettings && req.body.defaultBatchMode === BATCH_OPTIONS.DAILY
-			const caseHourly1 = prevSettings && prevSettings.defaultBatchMode === BATCH_OPTIONS.DAILY && req.body.defaultBatchMode === BATCH_OPTIONS.INCREMENTAL
+			const caseDaily = req.body.defaultBatchMode === BATCH_OPTIONS.DAILY
+			const caseHourly = req.body.defaultBatchMode === BATCH_OPTIONS.INCREMENTAL
 			//if either of the cases are true, create the daily batch scheduler
-			if (caseDaily1 || caseDaily2) {
-				await createDailyBatchScheduler(user.toObject(), settings.toObject());
-			} else if (caseHourly1) {
-				createIncrementalBatchScheduler(user, settings);
+			if (caseDaily) {
+				await createDailyBatchScheduler(req.body.autoBatch.enabled, user.toObject(), settings.toObject());
+			} else if (caseHourly) {
+				createIncrementalBatchScheduler(req.body.autoBatch.enabled, user, settings);
 			}
 			res.status(200).json({ message: 'Settings updated successfully', ...settings.toObject() });
 		} else {
