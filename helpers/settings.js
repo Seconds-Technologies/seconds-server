@@ -189,11 +189,11 @@ async function createDailyBatchScheduler(isEnabled = false, user, settings) {
 
 function calculateNextHourlyBatch(deliveryHours, batchInterval) {
 	const openTime = moment(deliveryHours[moment().day()].open);
-	const closeTime = moment(deliveryHours[moment().day()].close);
 	let canDeliver = deliveryHours[moment().day()].canDeliver;
 	let nextBatchTime = openTime.clone();
 	// loop over every <INTERVAL> hours from the store open time for current day
 	// stop when the batch time is after the current time AND store can deliver on the batch day
+	let offset = 1
 	while (nextBatchTime.isBefore(moment()) || !canDeliver) {
 		console.table({ NEXT_BATCH_TIME: nextBatchTime.format() });
 		// if calculated next batch time is in the PAST, add <INTERVAL> hours
@@ -201,7 +201,7 @@ function calculateNextHourlyBatch(deliveryHours, batchInterval) {
 		// check if the new batch time is within the store's delivery hours
 		canDeliver = checkPickupHours(nextBatchTime.format(), deliveryHours);
 		if (!canDeliver) {
-			nextBatchTime = setNextDayDeliveryTime(nextBatchTime.format(), deliveryHours);
+			nextBatchTime = moment(deliveryHours[moment().day()].open).add(offset, "day")
 		}
 	}
 	return nextBatchTime;
@@ -266,7 +266,7 @@ async function createIncrementalBatchScheduler(isEnabled = false, user, settings
 	});
 	// apply the target as the SQS queue which will trigger the lambda function to carry out the route-optimization + route assignment
 	const target = await EventBridge.putTargets({
-		Rule: hourlyBatchRuleName,
+			Rule: hourlyBatchRuleName,
 		Targets: [
 			{
 				Arn: process.env.AWS_SQS_ARN,
