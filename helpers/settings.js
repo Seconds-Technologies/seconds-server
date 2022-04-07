@@ -178,6 +178,9 @@ async function createDailyBatchScheduler(isEnabled = false, user, settings) {
 	const hourlyRule = await EventBridge.putRule({
 		Name: hourlyBatchRuleName,
 		ScheduleExpression,
+		Description: `[${String(process.env.ENVIRONMENT_MODE).toUpperCase()}] Hourly batch scheduler for ${
+			user.firstname
+		} ${user.lastname}`,
 		State: "DISABLED"
 	});
 	console.table({ dailyRule, hourlyRule });
@@ -282,6 +285,9 @@ async function createIncrementalBatchScheduler(isEnabled = false, user, settings
 	const dailyRule = await EventBridge.putRule({
 		Name: dailyBatchRuleName,
 		ScheduleExpression,
+		Description: `[${String(process.env.ENVIRONMENT_MODE).toUpperCase()}] Daily batch scheduler for ${
+			user.firstname
+		} ${user.lastname}`,
 		State: "DISABLED"
 	});
 	console.table({hourlyRule, dailyRule})
