@@ -1,5 +1,6 @@
 const moment = require('moment');
 const { EventBridge } = require('../constants');
+const { BATCH_OPTIONS } = require('@seconds-technologies/database_schemas/constants');
 
 function getMaxHourlyRange(deliveryHours) {
 	let earliestOpen = moment(deliveryHours[0].open);
@@ -163,7 +164,7 @@ async function createDailyBatchScheduler(isEnabled = false, user, settings) {
 			{
 				Arn: process.env.AWS_SQS_ARN,
 				Id: settings._id,
-				Input: JSON.stringify({ id: user._id })
+				Input: JSON.stringify({ id: user._id, type: BATCH_OPTIONS.DAILY })
 			}
 		]
 	});
@@ -267,7 +268,7 @@ async function createIncrementalBatchScheduler(isEnabled = false, user, settings
 			{
 				Arn: process.env.AWS_SQS_ARN,
 				Id: settings._id,
-				Input: JSON.stringify({ id: user._id })
+				Input: JSON.stringify({ id: user._id, type: BATCH_OPTIONS.INCREMENTAL })
 			}
 		]
 	});
