@@ -5,83 +5,7 @@ const moment = require('moment');
 const router = express.Router();
 const schedule = require('node-schedule');
 const { EventBridge } = require('../constants');
-
-function generateCronExpression(deadline, deliveryHours) {
-	//filter user's delivery hours by days that they can deliver on
-	const hour = deadline.get("hour")
-	const minute = deadline.get("minute")
-	console.log('************************************************');
-	const deliveryDays = Object.entries(deliveryHours).filter(([key, value]) => value.canDeliver).map(([key, value]) => Number(key)+1)
-	console.log(deliveryDays)
-	console.log('************************************************');
-	const cron = `${minute} ${hour} ? * ${deliveryDays.join(",")} *`
-	console.log(cron);
-	return { cron, deliveryDays }
-}
-
-async function createDailyBatchScheduler(isEnabled=false, user, settings) {
-	let h = Number(settings.autoBatch.daily.deadline.slice(0, 2));
-	let m = Number(settings.autoBatch.daily.deadline.slice(3));
-	console.table({h, m})
-	// generate cron using UTC time
-	const deadline = moment({ h, m }).utc();
-	console.log(deadline)
-	const { cron, deliveryDays } = generateCronExpression(deadline, user.deliveryHours);
-	let regex = "^([\\p{L}\\p{Z}\\p{N}_.:/=+\\-@]*)$"
-	// TODO - apply regex filtering to tag key and value properties
-	const Tags = [
-		{
-			Key: "clientId",
-			Value: user['_id']
-		},
-		{
-			Key: "clientEmail",
-			Value: user.email
-		},
-		{
-			Key: "clientDeliveryDays",
-			Value: deliveryDays.join("_")
-		},
-		{
-			Key: "lastModifiedAt",
-			Value: moment().format()
-		}
-	]
-	const RuleName = `${process.env.ENVIRONMENT_MODE}.${user._id}`
-	const ScheduleExpression = `cron(${cron})`
-	console.log(ScheduleExpression)
-	// create EventBridge Rule
-	const rule = await EventBridge.putRule({
-		Name: RuleName,
-		Description: `[${String(process.env.ENVIRONMENT_MODE).toUpperCase()}] Daily batch scheduler for ${user.firstname} ${user.lastname}`,
-		ScheduleExpression,
-		State: isEnabled ? "ENABLED" : "DISABLED"
-	})
-	console.log(rule)
-	// apply the target as the SQS queue which will trigger the lambda function to carry out the route-optimization + route assignment
-	const target = await EventBridge.putTargets({
-		Rule: RuleName,
-		Targets: [
-			{
-				Arn: process.env.AWS_SQS_ARN,
-				Id: settings._id,
-				Input: JSON.stringify({ id: user._id })
-			}
-		]
-	});
-	console.log(target)
-	// apply useful tags to identify the scheduled task in AWS
-	const tagResult = await EventBridge.tagResource({
-		ResourceARN: rule.RuleArn,
-		Tags
-	})
-	console.log(tagResult)
-	return rule
-}
-
-function createIncrementalBatchScheduler(isEnabled=false, user, settings) {
-	return true;
-}
+const { createDailyBatchScheduler, createIncrementalBatchScheduler } = require('../helpers/settings');
 
 router.patch('/business-workflow', async (req, res, next) => {
 	try {
@@ -103,7 +27,7 @@ router.patch('/business-workflow', async (req, res, next) => {
 			if (caseDaily) {
 				await createDailyBatchScheduler(req.body.autoBatch.enabled, user.toObject(), settings.toObject());
 			} else if (caseHourly) {
-				createIncrementalBatchScheduler(req.body.autoBatch.enabled, user, settings);
+				await createIncrementalBatchScheduler(req.body.autoBatch.enabled, user.toObject(), settings.toObject());
 			}
 			res.status(200).json({ message: 'Settings updated successfully', ...settings.toObject() });
 		} else {
