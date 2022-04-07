@@ -202,6 +202,7 @@ function calculateNextHourlyBatch(deliveryHours, batchInterval) {
 		canDeliver = checkPickupHours(nextBatchTime.format(), deliveryHours);
 		if (!canDeliver) {
 			nextBatchTime = moment(deliveryHours[moment().day()].open).add(offset, "day")
+			offset += 1
 		}
 	}
 	return nextBatchTime;
