@@ -1,5 +1,5 @@
 const AWS = require("aws-sdk");
-const { EventBridge, ActivateEventSourceCommand } = require("@aws-sdk/client-eventbridge");
+const { EventBridge } = require("@aws-sdk/client-eventbridge");
 
 exports.S3 = new AWS.S3({
 	apiVersion: '2006-03-01',

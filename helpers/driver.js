@@ -390,7 +390,7 @@ const progressJob = async (req, res, next) => {
 		if (job) {
 			const user = await db.User.findById(job.clientId)
 			const settings = await db.Settings.findOne({clientId: job.clientId})
-			let smsEnabled = settings ? settings.smsEnabled : false
+			let smsEnabled = settings ? settings.sms : false
 			if (status === STATUS.EN_ROUTE) {
 				let template = `Your ${user.company} order has been picked up and the driver is on his way. Track your delivery here: ${process.env.TRACKING_BASE_URL}/${job._id}`;
 				sendSMS(job.jobSpecification.deliveries[0].dropoffLocation.phoneNumber, template, smsEnabled).then(() =>
