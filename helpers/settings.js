@@ -1,6 +1,20 @@
 const moment = require('moment');
 const { EventBridge } = require('../constants');
 
+function getMaxHourlyRange(deliveryHours) {
+	let earliestOpen = moment(deliveryHours[0].open);
+	let latestClose = moment(deliveryHours[0].close);
+	Object.entries(deliveryHours).forEach(([day, value]) => {
+		if (moment(value.open).isBefore(earliestOpen)) {
+			earliestOpen = moment(value.open);
+		}
+		if (moment(value.close).isAfter(latestClose)) {
+			latestClose = moment(value.close);
+		}
+	});
+	return { earliestOpenHour: earliestOpen.get('hour'), latestCloseHour: latestClose.get('hour') };
+}
+
 function checkPickupHours(pickupTime, deliveryHours) {
 	console.log('===================================================================');
 	const deliveryDay = String(moment(pickupTime).day());
@@ -96,10 +110,8 @@ function generateDailyBatchCron(deadline, deliveryHours) {
 	const deliveryDays = Object.entries(deliveryHours)
 		.filter(([key, value]) => value.canDeliver)
 		.map(([key, value]) => Number(key) + 1);
-	console.log(deliveryDays);
 	console.log('************************************************');
 	const cron = `${minute} ${hour} ? * ${deliveryDays.join(',')} *`;
-	console.log(cron);
 	return { cron, deliveryDays };
 }
 
@@ -131,22 +143,22 @@ async function createDailyBatchScheduler(isEnabled = false, user, settings) {
 			Value: moment().format()
 		}
 	];
-	const RuleName = `${process.env.ENVIRONMENT_MODE}.daily.${user._id}`;
+	const dailyBatchRuleName = `${process.env.ENVIRONMENT_MODE}.daily.${user._id}`;
+	const hourlyBatchRuleName = `${process.env.ENVIRONMENT_MODE}.hourly.${user._id}`;
 	const ScheduleExpression = `cron(${cron})`;
 	console.log(ScheduleExpression);
-	// create EventBridge Rule
-	const rule = await EventBridge.putRule({
-		Name: RuleName,
+	// create EventBridge Rule for daily batch
+	const dailyRule = await EventBridge.putRule({
+		Name: dailyBatchRuleName,
 		Description: `[${String(process.env.ENVIRONMENT_MODE).toUpperCase()}] Daily batch scheduler for ${
 			user.firstname
 		} ${user.lastname}`,
 		ScheduleExpression,
 		State: isEnabled ? 'ENABLED' : 'DISABLED'
 	});
-	console.log(rule);
 	// apply the target as the SQS queue which will trigger the lambda function to carry out the route-optimization + route assignment
 	const target = await EventBridge.putTargets({
-		Rule: RuleName,
+		Rule: dailyBatchRuleName,
 		Targets: [
 			{
 				Arn: process.env.AWS_SQS_ARN,
@@ -157,12 +169,18 @@ async function createDailyBatchScheduler(isEnabled = false, user, settings) {
 	});
 	console.log(target);
 	// apply useful tags to identify the scheduled task in AWS
-	const tagResult = await EventBridge.tagResource({
-		ResourceARN: rule.RuleArn,
+	await EventBridge.tagResource({
+		ResourceARN: dailyRule.RuleArn,
 		Tags
 	});
-	console.log(tagResult);
-	return rule;
+	// disable EventBridge Rule for HOURLY batching
+	const hourlyRule = await EventBridge.putRule({
+		Name: hourlyBatchRuleName,
+		ScheduleExpression,
+		State: "DISABLED"
+	});
+	console.table({ dailyRule, hourlyRule });
+	return dailyRule;
 }
 
 function calculateNextHourlyBatch(deliveryHours, batchInterval) {
@@ -173,44 +191,27 @@ function calculateNextHourlyBatch(deliveryHours, batchInterval) {
 	// loop over every <INTERVAL> hours from the store open time for current day
 	// stop when the batch time is after the current time AND store can deliver on the batch day
 	while (nextBatchTime.isBefore(moment()) || !canDeliver) {
-		console.table({NEXT_BATCH_TIME: nextBatchTime.format()})
+		console.table({ NEXT_BATCH_TIME: nextBatchTime.format() });
 		// if calculated next batch time is in the PAST, add <INTERVAL> hours
 		nextBatchTime.add(batchInterval, 'hours');
 		// check if the new batch time is within the store's delivery hours
 		canDeliver = checkPickupHours(nextBatchTime.format(), deliveryHours);
 		if (!canDeliver) {
-			nextBatchTime = setNextDayDeliveryTime(nextBatchTime.format(), deliveryHours)
+			nextBatchTime = setNextDayDeliveryTime(nextBatchTime.format(), deliveryHours);
 		}
 	}
 	return nextBatchTime;
 }
 
-function getMaxHourlyRange(deliveryHours){
-	let earliestOpen = moment(deliveryHours[0].open);
-	let latestClose = moment(deliveryHours[0].close);
-	Object.entries(deliveryHours).forEach(([day, value]) => {
-		if (moment(value.open).isBefore(earliestOpen)) {
-			earliestOpen = moment(value.open)
-		}
-		if (moment(value.close).isAfter(latestClose)) {
-			latestClose = moment(value.close)
-		}
-	})
-	return { earliestOpenHour: earliestOpen.get("hour"), latestCloseHour: latestClose.get("hour") }
-}
-
 function generateHourlyBatchCron(batchTime, batchInterval, deliveryHours) {
 	//filter user's delivery hours by days that they can deliver on
-	console.log('************************************************');
 	const deliveryDays = Object.entries(deliveryHours)
 		.filter(([key, value]) => value.canDeliver)
 		.map(([key, value]) => Number(key) + 1);
-	console.log(deliveryDays);
 	console.log('************************************************');
 	const minute = batchTime.get('minute');
-	const { earliestOpenHour, latestCloseHour } = getMaxHourlyRange(deliveryHours)
+	const { earliestOpenHour, latestCloseHour } = getMaxHourlyRange(deliveryHours);
 	const cron = `${minute} ${earliestOpenHour}-${latestCloseHour}/${batchInterval} ? * ${deliveryDays.join(',')} *`;
-	console.log(cron);
 	return { cron, deliveryDays };
 }
 
@@ -219,7 +220,11 @@ async function createIncrementalBatchScheduler(isEnabled = false, user, settings
 	let h = nextBatchTime.get('hour');
 	let m = nextBatchTime.get('minute');
 	console.table({ h, m });
-	const { cron, deliveryDays } = generateHourlyBatchCron(nextBatchTime, settings.autoBatch.incremental.batchInterval, user.deliveryHours);
+	const { cron, deliveryDays } = generateHourlyBatchCron(
+		nextBatchTime,
+		settings.autoBatch.incremental.batchInterval,
+		user.deliveryHours
+	);
 	const Tags = [
 		{
 			Key: 'clientId',
@@ -242,22 +247,22 @@ async function createIncrementalBatchScheduler(isEnabled = false, user, settings
 			Value: 'hourly'
 		}
 	];
-	const RuleName = `${process.env.ENVIRONMENT_MODE}.hourly.${user._id}`;
+	const hourlyBatchRuleName = `${process.env.ENVIRONMENT_MODE}.hourly.${user._id}`;
+	const dailyBatchRuleName = `${process.env.ENVIRONMENT_MODE}.daily.${user._id}`;
 	const ScheduleExpression = `cron(${cron})`;
 	console.log(ScheduleExpression);
 	// create EventBridge Rule
-	const rule = await EventBridge.putRule({
-		Name: RuleName,
+	const hourlyRule = await EventBridge.putRule({
+		Name: hourlyBatchRuleName,
 		Description: `[${String(process.env.ENVIRONMENT_MODE).toUpperCase()}] Hourly batch scheduler for ${
 			user.firstname
 		} ${user.lastname}`,
 		ScheduleExpression,
 		State: isEnabled ? 'ENABLED' : 'DISABLED'
 	});
-	console.log(rule);
 	// apply the target as the SQS queue which will trigger the lambda function to carry out the route-optimization + route assignment
 	const target = await EventBridge.putTargets({
-		Rule: RuleName,
+		Rule: hourlyBatchRuleName,
 		Targets: [
 			{
 				Arn: process.env.AWS_SQS_ARN,
@@ -268,12 +273,18 @@ async function createIncrementalBatchScheduler(isEnabled = false, user, settings
 	});
 	console.log(target);
 	// apply useful tags to identify the scheduled task in AWS
-	const tagResult = await EventBridge.tagResource({
-		ResourceARN: rule.RuleArn,
+	await EventBridge.tagResource({
+		ResourceARN: hourlyRule.RuleArn,
 		Tags
 	});
-	console.log(tagResult);
-	return rule;
+	// disable EventBridge Rule for DAILY batching
+	const dailyRule = await EventBridge.putRule({
+		Name: dailyBatchRuleName,
+		ScheduleExpression,
+		State: "DISABLED"
+	});
+	console.table({hourlyRule, dailyRule})
+	return hourlyRule;
 }
 
 module.exports = { createDailyBatchScheduler, createIncrementalBatchScheduler };
