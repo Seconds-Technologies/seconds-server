@@ -124,11 +124,21 @@ router.post('/create-checkout-session', async (req, res) => {
 			{
 				price: prices.data[0].id,
 				// For metered billing, do not pass quantity
-				quantity: 1
+				quantity: 1,
+				tax_rates: [`${process.env.STRIPE_TAX_EXCLUSIVE}`]
 			},
-			{ price: prices.data[1].id },
-			{ price: prices.data[2].id },
-			{ price: prices.data[3].id }
+			{
+				price: prices.data[1].id,
+				tax_rates: [`${process.env.STRIPE_TAX_EXCLUSIVE}`]
+			},
+			{
+				price: prices.data[2].id,
+				tax_rates: [`${process.env.STRIPE_TAX_EXCLUSIVE}`]
+			},
+			{
+				price: prices.data[3].id,
+				tax_rates: [`${process.env.STRIPE_TAX_EXCLUSIVE}`]
+			}
 		],
 		mode: 'subscription',
 		subscription_data: {
