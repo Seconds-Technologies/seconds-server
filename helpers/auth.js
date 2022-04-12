@@ -6,7 +6,7 @@ const sendEmail = require('../services/email');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const { getBase64Image, genApiKey } = require('../helpers');
 const { S3_BUCKET_NAMES } = require('../constants');
-const MagicBellClient = require('@magicbell/core');
+const MagicBellClient = require('@magicbell/core').default;
 
 const login = async (req, res, next) => {
 	try {
