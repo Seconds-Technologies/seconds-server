@@ -6,6 +6,7 @@ const sendEmail = require('../services/email');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const { getBase64Image, genApiKey } = require('../helpers');
 const { S3_BUCKET_NAMES } = require('../constants');
+const MagicBellClient = require('@magicbell/core');
 
 const login = async (req, res, next) => {
 	try {
@@ -79,6 +80,14 @@ const login = async (req, res, next) => {
 			// fetch settings
 			const settings = await db.Settings.findOne({clientId: _id });
 			console.log(settings)
+			// create / update magic bell user
+			const magic_bell_client = await MagicBellClient.createInstance({
+				userExternalId: id,
+				apiKey: process.env.MAGIC_BELL_API_KEY,
+				apiSecret: process.env.MAGIC_BELL_API_SECRET,
+				userEmail: req.body.email
+			});
+			console.log(magic_bell_client)
 			return res.status(200).json({
 				id: _id,
 				firstname,
@@ -178,6 +187,13 @@ const register = async (req, res, next) => {
 			},
 			process.env.SECRET_KEY
 		);
+		// create magic bell user
+		const magic_bell_client = await MagicBellClient.createInstance({
+			userExternalId: id,
+			apiKey: process.env.MAGIC_BELL_API_KEY,
+			userEmail: req.body.email,
+		});
+		console.log(magic_bell_client)
 		await sendEmail({
 			email: 'ola@useseconds.com',
 			full_name: `Ola Oladapo`,
