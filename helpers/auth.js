@@ -80,14 +80,6 @@ const login = async (req, res, next) => {
 			// fetch settings
 			const settings = await db.Settings.findOne({clientId: _id });
 			console.log(settings)
-			// create / update magic bell user
-			const magic_bell_client = await MagicBellClient.createInstance({
-				userExternalId: id,
-				apiKey: process.env.MAGIC_BELL_API_KEY,
-				apiSecret: process.env.MAGIC_BELL_API_SECRET,
-				userEmail: req.body.email
-			});
-			console.log(magic_bell_client)
 			return res.status(200).json({
 				id: _id,
 				firstname,
