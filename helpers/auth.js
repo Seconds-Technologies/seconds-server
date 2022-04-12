@@ -186,7 +186,7 @@ const register = async (req, res, next) => {
 			userEmail: req.body.email,
 		});
 		console.log(magic_bell_client)
-		await sendEmail({
+		process.env.ENVIRONMENT_MODE === "production" && await sendEmail({
 			email: 'ola@useseconds.com',
 			full_name: `Ola Oladapo`,
 			subject: 'You have a new user! :)',
