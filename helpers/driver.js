@@ -8,7 +8,8 @@ const { genApiKey, getBase64Image } = require('./index');
 const { DRIVER_STATUS, S3, S3_BUCKET_NAMES } = require('../constants');
 const shorthash = require('shorthash');
 const nanoid = customAlphabet('1234567890', 6);
-const { Client } = require("@googlemaps/google-maps-services-js");
+const { Client } = require('@googlemaps/google-maps-services-js');
+const sendNotification = require('../services/notification');
 
 const GMapsClient = new Client();
 
@@ -52,9 +53,9 @@ async function calculateDeliveryETA(origin, destination, mode) {
 		console.log(distanceMatrix.rows[0].elements[0]);
 		let duration = Number(distanceMatrix.rows[0].elements[0].duration.value);
 		console.log('================================================');
-		console.log("DURATION", duration)
-		const newEta = moment().add(duration, 's').format()
-		console.log("NEW ETA", newEta)
+		console.log('DURATION', duration);
+		const newEta = moment().add(duration, 's').format();
+		console.log('NEW ETA', newEta);
 		console.log('================================================');
 		return newEta;
 	} catch (err) {
@@ -66,7 +67,7 @@ const login = async (req, res, next) => {
 	try {
 		let driver = await db.Driver.findOne({
 			phone: req.body.phone,
-			verified: true,
+			verified: true
 		});
 		if (driver) {
 			let { _id, clientIds, firstname, lastname, email, phone, vehicle, status, isOnline, apiKey } = driver;
@@ -352,8 +353,12 @@ const acceptJob = async (req, res, next) => {
 			job.trackingHistory.push({
 				timestamp: moment().unix(),
 				status: STATUS.DISPATCHING
-			})
+			});
 			await job.save();
+			// create / update magic bell user
+			const title = `${driver.firstname} has accepted an order`
+			const content = `Order ${job.jobSpecification.orderNumber} has been accepted by your driver. The order will be picked up shortly.`
+			sendNotification(job.clientId, title, content).then(() => console.log('notification sent!'))
 			return res.status(200).json(job);
 		} else {
 			return next({
@@ -388,19 +393,26 @@ const progressJob = async (req, res, next) => {
 		const job = await db.Job.findByIdAndUpdate(jobId, update, { new: true });
 		// check the driver's job status if it needs to be changed
 		if (job) {
-			const user = await db.User.findById(job.clientId)
-			const settings = await db.Settings.findOne({clientId: job.clientId})
-			let smsEnabled = settings ? settings.sms : false
+			const user = await db.User.findById(job.clientId);
+			const settings = await db.Settings.findOne({ clientId: job.clientId });
+			let smsEnabled = settings ? settings.sms : false;
 			if (status === STATUS.EN_ROUTE) {
 				let template = `Your ${user.company} order has been picked up and the driver is on his way. Track your delivery here: ${process.env.TRACKING_BASE_URL}/${job._id}`;
 				sendSMS(job.jobSpecification.deliveries[0].dropoffLocation.phoneNumber, template, smsEnabled).then(() =>
 					console.log('SMS sent successfully!')
 				);
-			} else if (status === STATUS.COMPLETED){
+			} else if (status === STATUS.COMPLETED) {
 				const template = `Your ${user.company} order has been delivered. Thanks for ordering with ${user.company}`;
 				sendSMS(job.jobSpecification.deliveries[0].dropoffLocation.phoneNumber, template, smsEnabled).then(() =>
 					console.log('SMS sent successfully!')
 				);
+				const title = `Delivery Finished!`
+				const content = `Order ${job.jobSpecification.orderNumber} has been delivered to the customer.`
+				sendNotification(job.clientId, title, content).then(() => console.log('notification sent!'))
+			} else if (status === STATUS.CANCELLED) {
+				const title = `Order Cancelled`
+				const content = `Order ${job.jobSpecification.orderNumber} has been cancelled by your driver.`
+				sendNotification(job.clientId, title, content).then(() => console.log('notification sent!'))
 			}
 			await checkDriverStatus(job['driverInformation'].id);
 			return res.status(200).json(job);
@@ -518,23 +530,28 @@ const updateDriverLocation = async (req, res, next) => {
 		const driver = await db.Driver.findById(driverId);
 		if (driver && longitude && latitude) {
 			// find all the jobs under the driverId that are DISPATCHING or EN-ROUTE
-			const jobs = await db.Job.find({'driverInformation.id': driverId, status: { $in: [STATUS.DISPATCHING, STATUS.EN_ROUTE] }})
+			const jobs = await db.Job.find({
+				'driverInformation.id': driverId,
+				status: { $in: [STATUS.DISPATCHING, STATUS.EN_ROUTE] }
+			});
 			// console.log(jobs)
 			jobs.forEach(job => {
-				const origin = [latitude, longitude]
-				const destination = [job.jobSpecification.deliveries[0].dropoffLocation.latitude, job.jobSpecification.deliveries[0].dropoffLocation.longitude]
-				const mode = VEHICLE_CODES_MAP[job.vehicleType].travelMode
+				const origin = [latitude, longitude];
+				const destination = [
+					job.jobSpecification.deliveries[0].dropoffLocation.latitude,
+					job.jobSpecification.deliveries[0].dropoffLocation.longitude
+				];
+				const mode = VEHICLE_CODES_MAP[job.vehicleType].travelMode;
 				// calculate new delivery ETA
-				calculateDeliveryETA(origin, destination, mode)
-					.then(deliveryETA => {
-						job.driverInformation.location = {
-							type: 'Point',
-							coordinates: [longitude, latitude]
-						}
-						job.jobSpecification.deliveries[0].dropoffEndTime = deliveryETA
-						job.save().then(() => console.log(`ETA updated for Order ${job.jobSpecification.orderNumber}`))
-					})
-			})
+				calculateDeliveryETA(origin, destination, mode).then(deliveryETA => {
+					job.driverInformation.location = {
+						type: 'Point',
+						coordinates: [longitude, latitude]
+					};
+					job.jobSpecification.deliveries[0].dropoffEndTime = deliveryETA;
+					job.save().then(() => console.log(`ETA updated for Order ${job.jobSpecification.orderNumber}`));
+				});
+			});
 		}
 		res.status(200).json({ message: 'SUCCESS' });
 	} catch (err) {
