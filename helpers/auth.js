@@ -6,6 +6,7 @@ const sendEmail = require('../services/email');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const { getBase64Image, genApiKey } = require('../helpers');
 const { S3_BUCKET_NAMES } = require('../constants');
+const axios = require('axios');
 const MagicBellClient = require('@magicbell/core').default;
 
 const login = async (req, res, next) => {
@@ -180,12 +181,29 @@ const register = async (req, res, next) => {
 			process.env.SECRET_KEY
 		);
 		// create magic bell user
-		const magic_bell_client = await MagicBellClient.createInstance({
-			userExternalId: id,
-			apiKey: process.env.MAGIC_BELL_API_KEY,
-			userEmail: req.body.email,
-		});
-		console.log(magic_bell_client)
+		const config = {
+			headers : {
+				'X-MAGICBELL-API-KEY': process.env.MAGIC_BELL_API_KEY,
+				'X-MAGICBELL-API-SECRET': process.env.MAGIC_BELL_SECRET_KEY,
+			}
+		}
+		const payload = {
+			user: {
+				external_id: id,
+				email,
+				first_name: firstname,
+				last_name: lastname,
+				phone_numbers: [
+					phone
+				],
+				custom_attributes: {
+					company,
+					fullAddress
+				}
+			}
+		}
+		const magicbellUser = (await axios.post(`${process.env.MAGIC_BELL_HOST}/users`, payload, config)).data
+		console.log(magicbellUser)
 		process.env.ENVIRONMENT_MODE === "production" && await sendEmail({
 			email: 'ola@useseconds.com',
 			full_name: `Ola Oladapo`,
