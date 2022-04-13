@@ -5,7 +5,7 @@ const sendSMS = require('../services/sms');
 const { customAlphabet } = require('nanoid/async');
 const { STATUS, VEHICLE_CODES_MAP } = require('@seconds-technologies/database_schemas/constants');
 const { genApiKey, getBase64Image } = require('./index');
-const { DRIVER_STATUS, S3, S3_BUCKET_NAMES } = require('../constants');
+const { DRIVER_STATUS, S3, S3_BUCKET_NAMES, MAGIC_BELL_CHANNELS } = require('../constants');
 const shorthash = require('shorthash');
 const nanoid = customAlphabet('1234567890', 6);
 const { Client } = require('@googlemaps/google-maps-services-js');
@@ -143,7 +143,7 @@ const verifyDriver = async (req, res, next) => {
 				// send success driver registration notification
 				const title = "New Driver!"
 				const content = `${firstname} ${lastname} has finished their registration and is now ready to receive orders`
-				sendNotification(clientIds[0], title, content).then(() => console.log('notification sent!'))
+				sendNotification(clientIds[0], title, content, MAGIC_BELL_CHANNELS.NEW_DRIVER).then(() => console.log('notification sent!'))
 				res.status(200).json({
 					id,
 					firstname,
@@ -362,7 +362,7 @@ const acceptJob = async (req, res, next) => {
 			// create / update magic bell user
 			const title = `${driver.firstname} has accepted an order`
 			const content = `Order ${job.jobSpecification.orderNumber} has been accepted by your driver. The order will be picked up shortly.`
-			sendNotification(job.clientId, title, content).then(() => console.log('notification sent!'))
+			sendNotification(job.clientId, title, content, MAGIC_BELL_CHANNELS.JOB_ACCEPTED).then(() => console.log('notification sent!'))
 			return res.status(200).json(job);
 		} else {
 			return next({
@@ -412,11 +412,11 @@ const progressJob = async (req, res, next) => {
 				);
 				const title = `Delivery Finished!`
 				const content = `Order ${job.jobSpecification.orderNumber} has been delivered to the customer.`
-				sendNotification(job.clientId, title, content).then(() => console.log('notification sent!'))
+				sendNotification(job.clientId, title, content, MAGIC_BELL_CHANNELS.ORDER_DELIVERED).then(() => console.log('notification sent!'))
 			} else if (status === STATUS.CANCELLED) {
 				const title = `Order Cancelled`
 				const content = `Order ${job.jobSpecification.orderNumber} has been cancelled by your driver.`
-				sendNotification(job.clientId, title, content).then(() => console.log('notification sent!'))
+				sendNotification(job.clientId, title, content, MAGIC_BELL_CHANNELS.ORDER_CANCELLED).then(() => console.log('notification sent!'))
 			}
 			await checkDriverStatus(job['driverInformation'].id);
 			return res.status(200).json(job);

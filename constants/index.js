@@ -45,3 +45,13 @@ exports.DRIVER_STATUS = {
 	BUSY: "BUSY",
 	OFFLINE: "OFFLINE"
 }
+
+exports.MAGIC_BELL_CHANNELS = {
+	ORDER_CREATED: "order_created",
+	ORDER_DELIVERED: "order_delivered",
+	ORDER_CANCELLED: "order_cancelled",
+	JOB_ACCEPTED: "job_accepted",
+	JOB_EXPIRED: "job_expired",
+	NEW_DRIVER: "driver_registered",
+	BUSINESS_WORKFLOWS: "business_workflows",
+}
