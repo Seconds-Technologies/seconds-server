@@ -140,6 +140,10 @@ const verifyDriver = async (req, res, next) => {
 					clientIds,
 					verified
 				} = driver.toObject();
+				// send success driver registration notification
+				const title = "New Driver!"
+				const content = `${firstname} ${lastname} has finished their registration and is now ready to receive orders`
+				sendNotification(clientIds[0], title, content).then(() => console.log('notification sent!'))
 				res.status(200).json({
 					id,
 					firstname,
