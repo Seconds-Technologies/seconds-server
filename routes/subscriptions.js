@@ -32,18 +32,34 @@ router.post('/setup-subscription', async (req, res) => {
 router.get('/fetch-stripe-subscription', async (req, res, next) => {
 	const { email } = req.query;
 	try {
-		const user = await db.User.findOne({ email: email });
+		const user = await db.User.findOne({ email });
 		console.log(user['subscriptionId'], user['subscriptionPlan']);
 		if (user['subscriptionId']) {
 			const subscription = await stripe.subscriptions.retrieve(user['subscriptionId']);
-			subscription && subscription.items.data && console.log(subscription.items.data[0]);
-			res.status(200).json({ id: subscription.id, name: subscription.items.data[0].plan.nickname, status: subscription.status, items: subscription.items.data });
+			let product = {
+				description:
+					'Ideal for small businesses with less than 350 orders per month. The platform will not accept anymore than 350 orders.'
+			};
+			if (subscription && subscription.items.data) {
+				console.log(subscription.items.data[0]);
+				const productId = subscription.items.data[0].plan.product;
+				product = await stripe.products.retrieve(productId);
+				console.log('-----------------------------------------------');
+				console.log(product);
+			}
+			res.status(200).json({
+				id: subscription.id,
+				name: user['subscriptionPlan'],
+				description: product.description,
+				status: subscription.status,
+				items: subscription.items.data
+			});
 		} else {
 			res.status(200).json({ id: '', name: '', status: null, items: [] });
 		}
 	} catch (e) {
 		console.error(e);
-		return next ({
+		return next({
 			status: 400,
 			message: e.message
 		});
@@ -53,26 +69,26 @@ router.get('/fetch-stripe-subscription', async (req, res, next) => {
 router.get('/cancel-subscription', async (req, res, next) => {
 	try {
 		const { email } = req.query;
-		console.log(email)
+		console.log(email);
 		// get the subscription id from the customer
 		const user = await db.User.findOne({ email: email });
-		console.log("User", user)
+		console.log('User', user);
 		if (user) {
 			const subscription = await stripe.subscriptions.update(user.subscriptionId, { cancel_at_period_end: true });
-			console.log(subscription)
+			console.log(subscription);
 			res.status(200).json({
 				subscriptionId: subscription.id,
-				cancelDate: subscription.cancel_at,
+				cancelDate: subscription.cancel_at
 			});
 		} else {
 			return next({
 				status: 404,
 				message: `No user found with email address ${email}`
-			})
+			});
 		}
 	} catch (err) {
 		console.error(err);
-		return next ({
+		return next({
 			status: 400,
 			message: err.message
 		});
@@ -82,16 +98,16 @@ router.get('/cancel-subscription', async (req, res, next) => {
 router.get('/fetch-invoices', async (req, res, next) => {
 	try {
 		const { email } = req.query;
-		const user = await db.User.findOne({email})
+		const user = await db.User.findOne({ email });
 		const invoices = await stripe.invoices.list({
 			customer: user['stripeCustomerId'],
 			limit: 5
 		});
-		console.log(invoices.data)
+		console.log(invoices.data);
 		res.status(200).json(invoices.data);
 	} catch (err) {
-		console.error(err)
-		return next ({
+		console.error(err);
+		return next({
 			status: 400,
 			message: err.message
 		});

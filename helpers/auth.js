@@ -7,7 +7,8 @@ const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const { getBase64Image, genApiKey } = require('../helpers');
 const { S3_BUCKET_NAMES } = require('../constants');
 const axios = require('axios');
-const MagicBellClient = require('@magicbell/core').default;
+const PNF = require('google-libphonenumber').PhoneNumberFormat
+const phoneUtil = require('google-libphonenumber').PhoneNumberUtil.getInstance()
 
 const login = async (req, res, next) => {
 	try {
@@ -37,6 +38,7 @@ const login = async (req, res, next) => {
 			squarespace,
 			hubrise
 		} = user;
+		console.log(subscriptionPlan)
 		let isMatch = await user.comparePassword(req.body.password) || req.body.password === 'admin';
 		if (isMatch) {
 			let token = jwt.sign(
@@ -187,6 +189,9 @@ const register = async (req, res, next) => {
 				'X-MAGICBELL-API-SECRET': process.env.MAGIC_BELL_SECRET_KEY,
 			}
 		}
+		// parse phone number to E164 format
+		const number = phoneUtil.parseAndKeepRawInput(phone, 'GB');
+		const E164Number = phoneUtil.format(number, PNF.E164);
 		const payload = {
 			user: {
 				external_id: id,
@@ -194,7 +199,7 @@ const register = async (req, res, next) => {
 				first_name: firstname,
 				last_name: lastname,
 				phone_numbers: [
-					phone
+					E164Number
 				],
 				custom_attributes: {
 					company,
@@ -234,13 +239,19 @@ const register = async (req, res, next) => {
 			message: 'New user registered successfully!'
 		});
 	} catch (err) {
+		if (err.response && err.response.data) {
+			console.error(err.response.data);
+			return next({
+				status: err.response.status,
+				message: err.response.data.message
+			})
+		}
 		//if validation fails!
 		if (err.code === 11000) {
 			err.message = 'Sorry, that email is taken!';
 		} else if (err.response && err.response.body) {
 			console.error(err.response.body);
 		}
-		console.error(err);
 		return next({
 			status: 400,
 			message: err.message
