@@ -46,13 +46,35 @@ const updateProfile = async (req, res, next) => {
 			await db.User.findByIdAndUpdate(id, { ...data }, { new: true });
 		console.log('Stripe Customer', stripeCustomerId);
 		// update stripe info
-		const customer = await stripe.customers.update(stripeCustomerId, {
+		await stripe.customers.update(stripeCustomerId, {
 			email,
 			name: `${firstname} ${lastname}`,
 			phone,
 			description: company
 		});
-		console.log(customer);
+		// update magic bell info
+		const config = {
+			headers : {
+				'X-MAGICBELL-API-KEY': process.env.MAGIC_BELL_API_KEY,
+				'X-MAGICBELL-API-SECRET': process.env.MAGIC_BELL_SECRET_KEY,
+			}
+		}
+		const payload = {
+			user: {
+				email,
+				first_name: firstname,
+				last_name: lastname,
+				phone_numbers: [
+					phone
+				],
+				custom_attributes: {
+					company,
+					fullAddress
+				}
+			}
+		}
+		const magicbellUser = (await axios.put(process.env.MAGIC_BELL_HOST, payload, config)).data
+		console.log(magicbellUser)
 		return res.status(200).json({
 			firstname,
 			lastname,
