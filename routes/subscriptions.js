@@ -29,7 +29,18 @@ function orderPriceIds(prices) {
 	return { items, products };
 }
 
-function deleteSubscriptionItem(activeItems) {
+function flagSubscriptionItems(activeItems) {
+	const deleted = [];
+	Object.entries(activeItems).forEach(([key, value], index) => {
+		if (index === 0) {
+			deleted.push({ id: value, deleted: true });
+		}
+	});
+	console.log(deleted);
+	return deleted;
+}
+
+function unflagSubscriptionItems(activeItems) {
 	const deleted = [];
 	Object.entries(activeItems).forEach(([key, value], index) => {
 		if (index === 0) {
@@ -54,14 +65,29 @@ router.post('/setup-subscription', async (req, res, next) => {
 		).data;
 		let { items, products } = orderPriceIds(prices);
 		console.log(items.slice(0, 2));
-		// check if user has an existing subscriptions
+		const planItem = items[0]
+		const commissionItem = items[1]
+		// check if user has an existing subscription
 		if (user.subscriptionId) {
 			// if they do, update the subscription plan price and standard commission price
-			const deletedItems = deleteSubscriptionItem(user.subscriptionItems);
-			subscription = await stripe.subscriptions.update(user.subscriptionId, {
-				proration_behavior: 'create_prorations',
-				items: [...items.slice(0, 2), ...deletedItems]
-			});
+			// first delete subscriptionItems for the main product that are no longer required i.e. starter, growth, etc
+			const flaggedItems = flagSubscriptionItems(user.subscriptionItems);
+			// second check if the line_item for the new plan commission already exists in the current subscription
+			subscription = await stripe.subscriptions.retrieve(user.subscriptionId)
+			// const commissionPriceIds = process.env.STRIPE_STANDARD_COMMISSION_IDS.split(' ')
+			const standard_commission = subscription.items.data.find(item => item.price.lookup_key === `${lookupKey}-commission`)
+			console.log(standard_commission)
+			if (standard_commission) {
+				subscription = await stripe.subscriptions.update(user.subscriptionId, {
+					proration_behavior: 'create_prorations',
+					items: [planItem, ...flaggedItems]
+				});
+			} else {
+				subscription = await stripe.subscriptions.update(user.subscriptionId, {
+					proration_behavior: 'create_prorations',
+					items: [planItem, commissionItem, ...flaggedItems]
+				});
+			}
 		} else {
 			// otherwise create a new subscription
 			subscription = await stripe.subscriptions.create({
