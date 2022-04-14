@@ -128,6 +128,7 @@ async function handleActiveSubscription(subscription) {
 			const user = await db.User.findOneAndUpdate(
 				{ stripeCustomerId: customer },
 				{
+					subscriptionId: id,
 					'subscriptionItems.standardMonthly': standardMonthly.id,
 					'subscriptionItems.standardCommission': standardCommission.id,
 					'subscriptionItems.multiDropCommission': multiDropCommission.id,
