@@ -101,22 +101,39 @@ function updateStock(product, quantity) {
 	return product;
 }
 
+function getSubscriptionItems(data) {
+	let standardMonthly = data.find(({ id, price }) => {
+		const whitelist = process.env.STRIPE_STANDARD_MONTHLY_IDS.split(' ')
+		console.log("Price plan ids:", whitelist)
+		return whitelist.includes(price.id)
+	})
+	let standardCommission = data.find(({ id, price }) => {
+		const whitelist = process.env.STRIPE_STANDARD_COMMISSION_IDS.split(' ')
+		console.log("Standard commission ids:", whitelist)
+		return whitelist.includes(price.id)
+	})
+	let multiDropCommission = data.find(({price}) => price.id === process.env.STRIPE_MULTIDROP_COMMISSION_PRICE )
+	let smsCommission = data.find(({price}) => price.id === process.env.STRIPE_SMS_COMMISSION_PRICE)
+	return { standardMonthly, standardCommission, multiDropCommission, smsCommission }
+}
+
 async function handleActiveSubscription(subscription) {
 	try {
 		console.log(subscription.items.data);
 		const SUBSCRIPTION_PLANS = process.env.STRIPE_SUBSCRIPTION_PLANS.split(' ');
 		console.log(SUBSCRIPTION_PLANS)
 		const { id, customer, status, items: { data } } = subscription;
-		if ((status === 'active' || status === 'trialing') && SUBSCRIPTION_PLANS.includes(data[0].price.lookup_key)) {
+		if (status === 'active' || status === 'trialing') {
+			const { standardMonthly, standardCommission, multiDropCommission, smsCommission } = getSubscriptionItems(data)
 			const user = await db.User.findOneAndUpdate(
 				{ stripeCustomerId: customer },
 				{
 					subscriptionId: id,
 					subscriptionPlan: data[0].price.lookup_key,
-					'subscriptionItems.standardMonthly': data[0].id,
-					'subscriptionItems.standardCommission': data[1].id,
-					'subscriptionItems.multiDropCommission': data[2].id,
-					'subscriptionItems.smsCommission': data[3].id
+					'subscriptionItems.standardMonthly': standardMonthly.id,
+					'subscriptionItems.standardCommission': standardCommission.id,
+					'subscriptionItems.multiDropCommission': multiDropCommission.id,
+					'subscriptionItems.smsCommission': smsCommission.id
 				},
 				{ new: true }
 			);

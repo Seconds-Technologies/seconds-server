@@ -6,51 +6,82 @@ const moment = require('moment');
 const router = express.Router();
 
 function orderPriceIds(prices) {
-	let ids = []
+	let products = []
+	let items = []
 	// add the core subscription plan price first
 	const planPrice = prices.find(price => process.env.STRIPE_SUBSCRIPTION_PLANS.includes(price.lookup_key))
-	ids.push({price: planPrice.id})
+	items.push({price: planPrice.id})
+	products.push(planPrice.product.id)
 	console.log(planPrice)
 	// use the planPrice to add the standard commission fee price
 	const commissionLookupKey = planPrice.lookup_key.concat("-commission")
 	const commissionPrice = prices.find(price => price.lookup_key === commissionLookupKey)
-	ids.push({price: commissionPrice.id})
+	items.push({price: commissionPrice.id})
+	products.push(commissionPrice.product.id)
 	// add multi-drop commission
 	const multiDropPrice = prices.find(price => price.id === process.env.STRIPE_MULTIDROP_COMMISSION_PRICE)
-	ids.push({price: multiDropPrice.id})
+	items.push({price: multiDropPrice.id})
+	products.push(multiDropPrice.product.id)
 	const smsPrice = prices.find(price => price.id === process.env.STRIPE_SMS_COMMISSION_PRICE)
-	ids.push({price: smsPrice.id})
-	console.log(ids)
-	return ids
+	items.push({price: smsPrice.id})
+	products.push(smsPrice.product.id)
+	return { items, products };
+}
+
+function deleteSubscriptionItem(activeItems) {
+	const deleted = []
+	Object.entries(activeItems).forEach(([key, value], index) => {
+		if(index === 0) {
+			deleted.push({id: value, deleted: true})
+		}
+	})
+	console.log(deleted)
+	return deleted
+
 }
 
 router.post('/setup-subscription', async (req, res, next) => {
 	try {
 		const { email } = req.query;
 		const { stripeCustomerId, paymentMethodId, lookupKey } = req.body;
-		// find user and cancel any existing subscriptions
 		const user =  await db.User.findOne({email})
+		let subscription;
 		let prices = (await stripe.prices.list({
 			lookup_keys: [lookupKey, `${lookupKey}-commission`, 'multi-drop-commission', 'sms-commission'],
 			expand: ['data.product']
 		})).data;
-		let items = orderPriceIds(prices)
-		const subscription = await stripe.subscriptions.create({
-			customer: stripeCustomerId,
-			items,
-			default_payment_method: paymentMethodId,
-			//TODO - add validation if user has already used their free trial
-			trial_period_days: Number(process.env.STRIPE_TRIAL_PERIOD_DAYS)
-		});
+		let { items, products } = orderPriceIds(prices)
+		console.log(items.slice(0, 2))
+		// check if user has an existing subscriptions
+		if (user.subscriptionId) {
+			// if they do, update the subscription plan price and standard commission price
+			const deletedItems = deleteSubscriptionItem(user.subscriptionItems)
+			subscription = await stripe.subscriptions.update(user.subscriptionId, {
+				proration_behavior: 'create_prorations',
+				items: [...items.slice(0, 2), ...deletedItems]
+			})
+		} else {
+			// otherwise create a new subscription
+			subscription = await stripe.subscriptions.create({
+				customer: stripeCustomerId,
+				items,
+				default_payment_method: paymentMethodId,
+				//TODO - add validation if user has already used their free trial
+				trial_period_days: Number(process.env.STRIPE_TRIAL_PERIOD_DAYS)
+			});
+		}
 		console.log('SUBSCRIPTION:', subscription);
-		//attach the subscription id to the user
+		// attach the subscription id to the user
 		const updatedUser = await db.User.findOneAndUpdate(
 			{ email },
 			{ subscriptionId: subscription.id, subscriptionPlan: lookupKey },
 			{ new: true }
 		);
+		// fetch product details of the main plan price
+		console.log(products[0])
+		const product = await stripe.products.retrieve(products[0])
 		console.log("NEW SUBSCRIPTION ID:", updatedUser.toObject().subscriptionId);
-		res.status(200).json(subscription);
+		res.status(200).json({id: subscription.id, description: product.description, amount: prices[0].unit_amount});
 	} catch (err) {
 		console.error(err);
 		return next({
