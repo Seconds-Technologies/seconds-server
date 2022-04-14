@@ -55,3 +55,8 @@ exports.MAGIC_BELL_CHANNELS = {
 	NEW_DRIVER: "driver_registered",
 	BUSINESS_WORKFLOWS: "business_workflows",
 }
+
+exports.COMMISSION_KEYS = {
+	MULTI_DROP: 'multi-drop-commission',
+	SMS: 'sms-commission'
+}

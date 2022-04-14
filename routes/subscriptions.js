@@ -5,27 +5,58 @@ const db = require('../models');
 const moment = require('moment');
 const router = express.Router();
 
-router.post('/setup-subscription', async (req, res) => {
-	const { email, stripeCustomerId } = req.body;
+function orderPriceIds(prices) {
+	let ids = []
+	// add the core subscription plan price first
+	const planPrice = prices.find(price => process.env.STRIPE_SUBSCRIPTION_PLANS.includes(price.lookup_key))
+	ids.push({price: planPrice.id})
+	console.log(planPrice)
+	// use the planPrice to add the standard commission fee price
+	const commissionLookupKey = planPrice.lookup_key.concat("-commission")
+	const commissionPrice = prices.find(price => price.lookup_key === commissionLookupKey)
+	ids.push({price: commissionPrice.id})
+	// add multi-drop commission
+	const multiDropPrice = prices.find(price => price.id === process.env.STRIPE_MULTIDROP_COMMISSION_PRICE)
+	ids.push({price: multiDropPrice.id})
+	const smsPrice = prices.find(price => price.id === process.env.STRIPE_SMS_COMMISSION_PRICE)
+	ids.push({price: smsPrice.id})
+	console.log(ids)
+	return ids
+}
+
+router.post('/setup-subscription', async (req, res, next) => {
 	try {
+		const { email } = req.query;
+		const { stripeCustomerId, paymentMethodId, lookupKey } = req.body;
+		// find user and cancel any existing subscriptions
+		const user =  await db.User.findOne({email})
+		let prices = (await stripe.prices.list({
+			lookup_keys: [lookupKey, `${lookupKey}-commission`, 'multi-drop-commission', 'sms-commission'],
+			expand: ['data.product']
+		})).data;
+		let items = orderPriceIds(prices)
 		const subscription = await stripe.subscriptions.create({
 			customer: stripeCustomerId,
-			items: [{ price: process.env.STRIPE_SUBSCRIPTION_ID }]
+			items,
+			default_payment_method: paymentMethodId,
+			//TODO - add validation if user has already used their free trial
+			trial_period_days: Number(process.env.STRIPE_TRIAL_PERIOD_DAYS)
 		});
 		console.log('SUBSCRIPTION:', subscription);
 		//attach the subscription id to the user
-		const updatedUser = db.User.findOneAndUpdate(
-			{ email: email },
-			{ stripeSubscriptionId: subscription.id },
+		const updatedUser = await db.User.findOneAndUpdate(
+			{ email },
+			{ subscriptionId: subscription.id, subscriptionPlan: lookupKey },
 			{ new: true }
 		);
-		console.log(updatedUser);
+		console.log("NEW SUBSCRIPTION ID:", updatedUser.toObject().subscriptionId);
 		res.status(200).json(subscription);
-	} catch (e) {
-		console.error(e);
-		res.status(400).json({
-			error: { ...e }
-		});
+	} catch (err) {
+		console.error(err);
+		return next({
+			status: err.status ? err.status : 400,
+			message: err.message
+		})
 	}
 });
 
