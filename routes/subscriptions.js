@@ -3,63 +3,65 @@ const express = require('express');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const db = require('../models');
 const moment = require('moment');
+const sendEmail = require('../services/email');
 const router = express.Router();
 
 function orderPriceIds(prices) {
-	let products = []
-	let items = []
+	let products = [];
+	let items = [];
 	// add the core subscription plan price first
-	const planPrice = prices.find(price => process.env.STRIPE_SUBSCRIPTION_PLANS.includes(price.lookup_key))
-	items.push({price: planPrice.id})
-	products.push(planPrice.product.id)
-	console.log(planPrice)
+	const planPrice = prices.find(price => process.env.STRIPE_SUBSCRIPTION_PLANS.includes(price.lookup_key));
+	items.push({ price: planPrice.id });
+	products.push(planPrice.product.id);
+	console.log(planPrice);
 	// use the planPrice to add the standard commission fee price
-	const commissionLookupKey = planPrice.lookup_key.concat("-commission")
-	const commissionPrice = prices.find(price => price.lookup_key === commissionLookupKey)
-	items.push({price: commissionPrice.id})
-	products.push(commissionPrice.product.id)
+	const commissionLookupKey = planPrice.lookup_key.concat('-commission');
+	const commissionPrice = prices.find(price => price.lookup_key === commissionLookupKey);
+	items.push({ price: commissionPrice.id });
+	products.push(commissionPrice.product.id);
 	// add multi-drop commission
-	const multiDropPrice = prices.find(price => price.id === process.env.STRIPE_MULTIDROP_COMMISSION_PRICE)
-	items.push({price: multiDropPrice.id})
-	products.push(multiDropPrice.product.id)
-	const smsPrice = prices.find(price => price.id === process.env.STRIPE_SMS_COMMISSION_PRICE)
-	items.push({price: smsPrice.id})
-	products.push(smsPrice.product.id)
+	const multiDropPrice = prices.find(price => price.id === process.env.STRIPE_MULTIDROP_COMMISSION_PRICE);
+	items.push({ price: multiDropPrice.id });
+	products.push(multiDropPrice.product.id);
+	const smsPrice = prices.find(price => price.id === process.env.STRIPE_SMS_COMMISSION_PRICE);
+	items.push({ price: smsPrice.id });
+	products.push(smsPrice.product.id);
 	return { items, products };
 }
 
 function deleteSubscriptionItem(activeItems) {
-	const deleted = []
+	const deleted = [];
 	Object.entries(activeItems).forEach(([key, value], index) => {
-		if(index === 0) {
-			deleted.push({id: value, deleted: true})
+		if (index === 0) {
+			deleted.push({ id: value, deleted: true });
 		}
-	})
-	console.log(deleted)
-	return deleted
-
+	});
+	console.log(deleted);
+	return deleted;
 }
 
 router.post('/setup-subscription', async (req, res, next) => {
 	try {
 		const { email } = req.query;
 		const { stripeCustomerId, paymentMethodId, lookupKey } = req.body;
-		const user =  await db.User.findOne({email})
+		const user = await db.User.findOne({ email });
 		let subscription;
-		let prices = (await stripe.prices.list({
-			lookup_keys: [lookupKey, `${lookupKey}-commission`, 'multi-drop-commission', 'sms-commission'],
-			expand: ['data.product']
-		})).data;
-		let { items, products } = orderPriceIds(prices)
-		console.log(items.slice(0, 2))
+		let prices = (
+			await stripe.prices.list({
+				lookup_keys: [lookupKey, `${lookupKey}-commission`, 'multi-drop-commission', 'sms-commission'],
+				expand: ['data.product']
+			})
+		).data;
+		let { items, products } = orderPriceIds(prices);
+		console.log(items.slice(0, 2));
 		// check if user has an existing subscriptions
 		if (user.subscriptionId) {
 			// if they do, update the subscription plan price and standard commission price
-			const deletedItems = deleteSubscriptionItem(user.subscriptionItems)
+			const deletedItems = deleteSubscriptionItem(user.subscriptionItems);
 			subscription = await stripe.subscriptions.update(user.subscriptionId, {
 				proration_behavior: 'create_prorations',
 				items: [...items.slice(0, 2), ...deletedItems]
-			})
+			});
 		} else {
 			// otherwise create a new subscription
 			subscription = await stripe.subscriptions.create({
@@ -78,16 +80,16 @@ router.post('/setup-subscription', async (req, res, next) => {
 			{ new: true }
 		);
 		// fetch product details of the main plan price
-		console.log(products[0])
-		const product = await stripe.products.retrieve(products[0])
-		console.table({id: subscription.id, description: product.description, amount: prices[0].unit_amount});
-		res.status(200).json({id: subscription.id, description: product.description, amount: prices[0].unit_amount});
+		console.log(products[0]);
+		const product = await stripe.products.retrieve(products[0]);
+		console.table({ id: subscription.id, description: product.description, amount: prices[0].unit_amount });
+		res.status(200).json({ id: subscription.id, description: product.description, amount: prices[0].unit_amount });
 	} catch (err) {
 		console.error(err);
 		return next({
 			status: err.status ? err.status : 400,
 			message: err.message
-		})
+		});
 	}
 });
 
@@ -130,7 +132,7 @@ router.get('/fetch-stripe-subscription', async (req, res, next) => {
 
 router.get('/cancel-subscription', async (req, res, next) => {
 	try {
-		const { email } = req.query;
+		const { email, reason } = req.query;
 		console.log(email);
 		// get the subscription id from the customer
 		const user = await db.User.findOne({ email: email });
@@ -138,6 +140,20 @@ router.get('/cancel-subscription', async (req, res, next) => {
 		if (user) {
 			const subscription = await stripe.subscriptions.update(user.subscriptionId, { cancel_at_period_end: true });
 			console.log(subscription);
+			// send email to admins about the cancellation
+			const message = `${user.firstname} ${user.lastname} has cancelled their subscription\n\nReason: ${reason}`;
+			sendEmail({
+				name: 'Ola Oladapo',
+				email: 'ola@useseconds.com',
+				subject: 'Subscription cancelled!',
+				message
+			}).then(() => console.log('email sent successfully'));
+			sendEmail({
+				name: 'Chisom Oguibe',
+				email: 'chisom@useseconds.com',
+				subject: 'Subscription cancelled!',
+				message
+			}).then(() => console.log('email sent successfully'));
 			res.status(200).json({
 				subscriptionId: subscription.id,
 				cancelDate: subscription.cancel_at
