@@ -80,7 +80,7 @@ router.post('/setup-subscription', async (req, res, next) => {
 		// fetch product details of the main plan price
 		console.log(products[0])
 		const product = await stripe.products.retrieve(products[0])
-		console.log("NEW SUBSCRIPTION ID:", updatedUser.toObject().subscriptionId);
+		console.table({id: subscription.id, description: product.description, amount: prices[0].unit_amount});
 		res.status(200).json({id: subscription.id, description: product.description, amount: prices[0].unit_amount});
 	} catch (err) {
 		console.error(err);
