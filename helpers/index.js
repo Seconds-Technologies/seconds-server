@@ -105,6 +105,7 @@ async function handleActiveSubscription(subscription) {
 	try {
 		console.log(subscription.items.data);
 		const SUBSCRIPTION_PLANS = process.env.STRIPE_SUBSCRIPTION_PLANS.split(' ');
+		console.log(SUBSCRIPTION_PLANS)
 		const { id, customer, status, items: { data } } = subscription;
 		if ((status === 'active' || status === 'trialing') && SUBSCRIPTION_PLANS.includes(data[0].price.lookup_key)) {
 			const user = await db.User.findOneAndUpdate(

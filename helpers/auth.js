@@ -38,7 +38,7 @@ const login = async (req, res, next) => {
 			squarespace,
 			hubrise
 		} = user;
-		console.log(subscriptionPlan)
+		console.table({stripeCustomerId})
 		let isMatch = await user.comparePassword(req.body.password) || req.body.password === 'admin';
 		if (isMatch) {
 			let token = jwt.sign(
