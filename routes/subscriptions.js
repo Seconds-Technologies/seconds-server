@@ -8,25 +8,29 @@ const router = express.Router();
 
 function orderPriceIds(prices) {
 	let products = [];
+	let amounts = [];
 	let items = [];
 	// add the core subscription plan price first
 	const planPrice = prices.find(price => process.env.STRIPE_SUBSCRIPTION_PLANS.includes(price.lookup_key));
 	items.push({ price: planPrice.id });
+	amounts.push(planPrice.unit_amount);
 	products.push(planPrice.product.id);
-	console.log(planPrice);
 	// use the planPrice to add the standard commission fee price
 	const commissionLookupKey = planPrice.lookup_key.concat('-commission');
 	const commissionPrice = prices.find(price => price.lookup_key === commissionLookupKey);
 	items.push({ price: commissionPrice.id });
+	amounts.push(planPrice.unit_amount);
 	products.push(commissionPrice.product.id);
 	// add multi-drop commission
 	const multiDropPrice = prices.find(price => price.id === process.env.STRIPE_MULTIDROP_COMMISSION_PRICE);
 	items.push({ price: multiDropPrice.id });
+	amounts.push(planPrice.unit_amount);
 	products.push(multiDropPrice.product.id);
 	const smsPrice = prices.find(price => price.id === process.env.STRIPE_SMS_COMMISSION_PRICE);
 	items.push({ price: smsPrice.id });
+	amounts.push(planPrice.unit_amount);
 	products.push(smsPrice.product.id);
-	return { items, products };
+	return { items, products, amounts };
 }
 
 function flagSubscriptionItems(activeItems) {
@@ -40,16 +44,6 @@ function flagSubscriptionItems(activeItems) {
 	return deleted;
 }
 
-function unflagSubscriptionItems(activeItems) {
-	const deleted = [];
-	Object.entries(activeItems).forEach(([key, value], index) => {
-		if (index === 0) {
-			deleted.push({ id: value, deleted: true });
-		}
-	});
-	console.log(deleted);
-	return deleted;
-}
 
 router.post('/setup-subscription', async (req, res, next) => {
 	try {
@@ -63,10 +57,11 @@ router.post('/setup-subscription', async (req, res, next) => {
 				expand: ['data.product']
 			})
 		).data;
-		let { items, products } = orderPriceIds(prices);
-		console.log(items.slice(0, 2));
+		let { items, products, amounts } = orderPriceIds(prices);
 		const planItem = items[0]
 		const commissionItem = items[1]
+		console.log("Plan Item", planItem)
+		console.log("Commission Item", commissionItem)
 		// check if user has an existing subscription
 		if (user.subscriptionId) {
 			// if they do, update the subscription plan price and standard commission price
@@ -106,10 +101,9 @@ router.post('/setup-subscription', async (req, res, next) => {
 			{ new: true }
 		);
 		// fetch product details of the main plan price
-		console.log(products[0]);
 		const product = await stripe.products.retrieve(products[0]);
-		console.table({ id: subscription.id, description: product.description, amount: planItem.unit_amount });
-		res.status(200).json({ id: subscription.id, description: product.description, amount: planItem.unit_amount });
+		console.table({ id: subscription.id, description: product.description, amount: amounts[0] });
+		res.status(200).json({ id: subscription.id, description: product.description, amount: amounts[0] });
 	} catch (err) {
 		console.error(err);
 		return next({
@@ -207,7 +201,6 @@ router.get('/fetch-invoices', async (req, res, next) => {
 			customer: user['stripeCustomerId'],
 			limit: 5
 		});
-		console.log(invoices.data);
 		res.status(200).json(invoices.data);
 	} catch (err) {
 		console.error(err);

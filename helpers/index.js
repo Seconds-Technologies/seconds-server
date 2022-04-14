@@ -104,12 +104,10 @@ function updateStock(product, quantity) {
 function getSubscriptionItems(data) {
 	let standardMonthly = data.find(({ id, price }) => {
 		const whitelist = process.env.STRIPE_STANDARD_MONTHLY_IDS.split(' ')
-		console.log("Price plan ids:", whitelist)
 		return whitelist.includes(price.id)
 	})
 	let standardCommission = data.find(({ id, price }) => {
 		const whitelist = process.env.STRIPE_STANDARD_COMMISSION_IDS.split(' ')
-		console.log("Standard commission ids:", whitelist)
 		return whitelist.includes(price.id)
 	})
 	let multiDropCommission = data.find(({price}) => price.id === process.env.STRIPE_MULTIDROP_COMMISSION_PRICE )
