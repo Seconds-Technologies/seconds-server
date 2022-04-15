@@ -282,6 +282,8 @@ const getDrivers = async (req, res, next) => {
 		const user = await db.User.findOne({ email });
 		if (user) {
 			let drivers = await db.Driver.find({ clientIds: user['_id'] });
+			// sort drivers by date of creation
+			drivers.sort((a, b) => b.status - a.status);
 			drivers = drivers.map(driver => {
 				let {
 					_id: id,
