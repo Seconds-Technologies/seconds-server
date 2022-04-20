@@ -8,6 +8,8 @@ const moment = require('moment');
 const { S3_BUCKET_NAMES, ROUTE_OPTIMIZATION_OBJECTIVES } = require('../constants');
 const { VEHICLE_CODES } = require('@seconds-technologies/database_schemas/constants');
 const { checkGeolocationProximity, countVehicles } = require('./index');
+const PNF = require('google-libphonenumber').PhoneNumberFormat
+const phoneUtil = require('google-libphonenumber').PhoneNumberUtil.getInstance()
 const optimizationAxios = axios.create();
 optimizationAxios.defaults.headers.common['x-api-key'] = process.env.LOGISTICSOS_API_KEY;
 
@@ -59,12 +61,15 @@ const updateProfile = async (req, res, next) => {
 				'X-MAGICBELL-API-SECRET': process.env.MAGIC_BELL_SECRET_KEY
 			}
 		};
+		// parse phone number to E164 format
+		const number = phoneUtil.parseAndKeepRawInput(phone, 'GB');
+		const E164Number = phoneUtil.format(number, PNF.E164);
 		const payload = {
 			user: {
 				email,
 				first_name: firstname,
 				last_name: lastname,
-				phone_numbers: [phone],
+				phone_numbers: [E164Number],
 				custom_attributes: {
 					company,
 					fullAddress
@@ -73,7 +78,7 @@ const updateProfile = async (req, res, next) => {
 		};
 		axios
 			.put(`${process.env.MAGIC_BELL_HOST}/users/${magicbellId}`, payload, config)
-			.then(({ data }) => console.log(data))
+			.then(({ data }) => console.log("MagicBell", data.user))
 			.catch(err => console.error(err.response.data));
 		return res.status(200).json({
 			firstname,
