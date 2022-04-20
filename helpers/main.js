@@ -261,6 +261,33 @@ const synchronizeUserInfo = async (req, res, next) => {
 	}
 };
 
+const updateJobDetails = async (req, res, next) => {
+	try {
+		const { orderNumber, firstname, lastname, phone, email, addressLine1, addressLine2, city, postcode } = req.body;
+		// find the job with matching orderNumber
+		const job = await db.Job.findOne({'jobSpecification.orderNumber': orderNumber})
+		if(job) {
+			job.jobSpecification.deliveries[0].dropoffLocation.firstName = firstname
+			job.jobSpecification.deliveries[0].dropoffLocation.lastName = lastname
+			job.jobSpecification.deliveries[0].dropoffLocation.email = email
+			job.jobSpecification.deliveries[0].dropoffLocation.phoneNumber = phone
+			job.jobSpecification.deliveries[0].dropoffLocation.streetAddress = addressLine2 ? addressLine1 + addressLine2 : addressLine1
+			job.jobSpecification.deliveries[0].dropoffLocation.city = city
+			job.jobSpecification.deliveries[0].dropoffLocation.postcode = postcode
+			await job.save()
+			res.status(200).json({ message: "Job updated successfully" })
+		} else {
+			return next({
+				status: 404,
+				message: `Could not find job with orderNumber: ${orderNumber}`
+			})
+		}
+	} catch (err) {
+	    console.error(err)
+		res.status(500).json({ message: err.message });
+	}
+}
+
 /**
  * Optimize Orders - returns a list of optimized routes for multiple drivers/vehicles
  * @constructor
@@ -490,6 +517,7 @@ module.exports = {
 	uploadProfileImage,
 	updateDeliveryStrategies,
 	synchronizeUserInfo,
+	updateJobDetails,
 	sendRouteOptimization,
 	getOptimizedRoute,
 	deleteOrders
