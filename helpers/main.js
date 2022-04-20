@@ -42,7 +42,7 @@ const updateProfile = async (req, res, next) => {
 	try {
 		const { id, data } = req.body;
 		// update user info in database
-		const { firstname, lastname, email, company, stripeCustomerId, phone, fullAddress } =
+		const { firstname, lastname, email, company, stripeCustomerId, phone, fullAddress, magicbellId } =
 			await db.User.findByIdAndUpdate(id, { ...data }, { new: true });
 		console.log('Stripe Customer', stripeCustomerId);
 		// update stripe info
@@ -72,7 +72,7 @@ const updateProfile = async (req, res, next) => {
 			}
 		};
 		axios
-			.put(`${process.env.MAGIC_BELL_HOST}/users/${id}`, payload, config)
+			.put(`${process.env.MAGIC_BELL_HOST}/users/${magicbellId}`, payload, config)
 			.then(user => console.log(user))
 			.catch(err => console.error(err));
 		return res.status(200).json({
