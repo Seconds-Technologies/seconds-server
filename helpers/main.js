@@ -74,7 +74,7 @@ const updateProfile = async (req, res, next) => {
 		axios
 			.put(`${process.env.MAGIC_BELL_HOST}/users/${magicbellId}`, payload, config)
 			.then(({ data }) => console.log(data))
-			.catch(err => console.error(err));
+			.catch(err => console.error(err.response.data));
 		return res.status(200).json({
 			firstname,
 			lastname,
