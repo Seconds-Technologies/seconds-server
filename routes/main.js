@@ -27,6 +27,7 @@ const {
 	updateDeliveryStrategies,
 	synchronizeUserInfo,
 	getOptimizedRoute,
+	updateJobDetails,
 	sendRouteOptimization,
 	deleteOrders
 } = require('../helpers/main');
@@ -46,6 +47,7 @@ router.post('/create-driver', createDriver);
 router.post('/update-driver', updateDriver);
 router.patch('/delete-drivers', deleteDrivers);
 // jobs
+router.post('/update-job', updateJobDetails)
 router.post('/optimise-route', sendRouteOptimization);
 router.get('/optimise-route', getOptimizedRoute);
 router.patch('/cancel-orders', deleteOrders)
