@@ -207,8 +207,10 @@ const register = async (req, res, next) => {
 				}
 			}
 		}
-		const magicbellUser = (await axios.post(`${process.env.MAGIC_BELL_HOST}/users`, payload, config)).data
-		console.log(magicbellUser)
+		const magicbell = (await axios.post(`${process.env.MAGIC_BELL_HOST}/users`, payload, config)).data
+		console.log(magicbell)
+		user.magicbellId = magicbell.user.id
+		await user.save()
 		process.env.ENVIRONMENT_MODE === "production" && await sendEmail({
 			email: 'ola@useseconds.com',
 			full_name: `Ola Oladapo`,

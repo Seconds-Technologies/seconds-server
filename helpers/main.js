@@ -54,26 +54,27 @@ const updateProfile = async (req, res, next) => {
 		});
 		// update magic bell info
 		const config = {
-			headers : {
+			headers: {
 				'X-MAGICBELL-API-KEY': process.env.MAGIC_BELL_API_KEY,
-				'X-MAGICBELL-API-SECRET': process.env.MAGIC_BELL_SECRET_KEY,
+				'X-MAGICBELL-API-SECRET': process.env.MAGIC_BELL_SECRET_KEY
 			}
-		}
+		};
 		const payload = {
 			user: {
 				email,
 				first_name: firstname,
 				last_name: lastname,
-				phone_numbers: [
-					phone
-				],
+				phone_numbers: [phone],
 				custom_attributes: {
 					company,
 					fullAddress
 				}
 			}
-		}
-		axios.put(`${process.env.MAGIC_BELL_HOST}/users/${id}`, payload, config).then((user) => console.log(user)).catch((err) => console.error(err))
+		};
+		axios
+			.put(`${process.env.MAGIC_BELL_HOST}/users/${id}`, payload, config)
+			.then(user => console.log(user))
+			.catch(err => console.error(err));
 		return res.status(200).json({
 			firstname,
 			lastname,
@@ -196,7 +197,7 @@ const synchronizeUserInfo = async (req, res, next) => {
 			// lookup integrated drivers
 			let drivers = await db.Driver.find({ clientIds: _id });
 			drivers.sort((a, b) => b.createdAt - a.createdAt);
-			const settings = await db.Settings.findOne({clientId: _id})
+			const settings = await db.Settings.findOne({ clientId: _id });
 			res.status(200).json({
 				id: _id,
 				firstname,
@@ -275,28 +276,27 @@ const sendRouteOptimization = async (req, res) => {
 			console.table({ orderCount: orders.length, ...params });
 			console.log('******************************************');
 			// iterate through each order and re-structure the payload to match logisticsOS "order" payload
-			const ordersPayload = Array.from(orders).flatMap(
-				({ jobSpecification: { orderNumber, deliveries } }) =>
-					deliveries.flatMap(({ dropoffLocation, dropoffStartTime, dropoffEndTime }) => {
-						return {
-							id: orderNumber,
-							geometry: {
-								zipcode: dropoffLocation.postcode,
-								coordinates: {
-									lon: dropoffLocation.longitude,
-									lat: dropoffLocation.latitude
-								},
-								curb: false
+			const ordersPayload = Array.from(orders).flatMap(({ jobSpecification: { orderNumber, deliveries } }) =>
+				deliveries.flatMap(({ dropoffLocation, dropoffStartTime, dropoffEndTime }) => {
+					return {
+						id: orderNumber,
+						geometry: {
+							zipcode: dropoffLocation.postcode,
+							coordinates: {
+								lon: dropoffLocation.longitude,
+								lat: dropoffLocation.latitude
 							},
-							service: {
-								dropoff_quantities: [1]
-							},
-							time_window: {
-								start: dropoffStartTime ? moment(dropoffStartTime).unix() : moment().unix(),
-								end: moment(dropoffEndTime).unix()
-							}
-						};
-					})
+							curb: false
+						},
+						service: {
+							dropoff_quantities: [1]
+						},
+						time_window: {
+							start: dropoffStartTime ? moment(dropoffStartTime).unix() : moment().unix(),
+							end: moment(dropoffEndTime).unix()
+						}
+					};
+				})
 			);
 			// log final result to confirm
 			console.log('-----------------------------------------------');
@@ -352,7 +352,7 @@ const sendRouteOptimization = async (req, res) => {
 				.filter(([_, value]) => value)
 				.map(([key, _]) => ROUTE_OPTIMIZATION_OBJECTIVES[key]);
 			const drivers = await db.Driver.find({ vehicle: { $in: params.vehicles }, verified: true });
-			console.log(drivers)
+			console.log(drivers);
 			// count drivers per vehicle
 			let counts = countVehicles(drivers);
 			console.table({ counts });
@@ -418,14 +418,14 @@ const getOptimizedRoute = async (req, res, next) => {
 		let result;
 		do {
 			result = (await new Promise(resolve => setTimeout(() => resolve(axios.get(URL, config)), 5000))).data;
-			console.table({status: result.status});
+			console.table({ status: result.status });
 		} while (result.status !== 'SUCCEED' && result.status !== 'FAILED');
 		/***********************************************************************************************/
 		if (result.status === 'FAILED') {
 			console.log(result);
 			return next({
 				status: 400,
-				message: 'Route optimization failed',
+				message: 'Route optimization failed'
 			});
 		} else if (result['plan_summary'].unassigned === num_orders) {
 			return next({
@@ -433,10 +433,14 @@ const getOptimizedRoute = async (req, res, next) => {
 				message: 'Your orders could not be optimized. Please check that your time windows are not in the past'
 			});
 		} else {
-			result.routes.forEach(route => console.log(route))
+			result.routes.forEach(route => console.log(route));
 			// all orders were assigned;
-			console.log(result['unassigned_stops'].unreachable)
-			return res.status(200).json({ message: 'SUCCESS', routes: result.routes, unreachable: result['unassigned_stops'].unreachable });
+			console.log(result['unassigned_stops'].unreachable);
+			return res.status(200).json({
+				message: 'SUCCESS',
+				routes: result.routes,
+				unreachable: result['unassigned_stops'].unreachable
+			});
 		}
 	} catch (err) {
 		console.error(err);
@@ -448,28 +452,31 @@ const deleteOrders = async (req, res, next) => {
 	try {
 		const { email } = req.query;
 		const { orderNumbers } = req.body;
-		const user = await db.User.findOne({email})
+		const user = await db.User.findOne({ email });
 		if (user) {
-			const result = await db.Job.deleteMany({
-				clientId: user._id,
-				'jobSpecification.orderNumber': { $in: orderNumbers }
-			}, {returnOriginal: true})
-			console.log(result)
-			res.status(200).json({message: "SUCCESS"})
+			const result = await db.Job.deleteMany(
+				{
+					clientId: user._id,
+					'jobSpecification.orderNumber': { $in: orderNumbers }
+				},
+				{ returnOriginal: true }
+			);
+			console.log(result);
+			res.status(200).json({ message: 'SUCCESS' });
 		} else {
 			return next({
 				status: 404,
-				message: "No user found with that email address"
-			})
+				message: 'No user found with that email address'
+			});
 		}
 	} catch (err) {
-	    console.error(err)
+		console.error(err);
 		return next({
 			status: 500,
 			message: err.message
-		})
+		});
 	}
-}
+};
 
 module.exports = {
 	generateSecurityKeys,
