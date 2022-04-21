@@ -63,16 +63,16 @@ app.use('/server/main', authenticateUser, mainRoutes); //TODO - Correct path for
 app.use('/server/driver', driverRoutes);
 app.use('/server/settings', authenticateUser, settingsRoutes);
 
-// E-COMMERCE ROUTES
+// E-COMMERCE INTEGRATION ROUTES
 app.use('/server/square', squareRoutes)
 app.use('/server/shopify', authenticateUser, shopifyRoutes);
 app.use('/server/woocommerce', wooCommerceTimeout, woocommerceRoutes)
 app.use('/server/squarespace', squarespaceRoutes)
 app.use('/server/hubrise', hubriseRoutes)
 
-// PAYMENT ROUTES
-app.use('/server/payment', paymentRoutes);
-app.use('/server/subscription', subscriptionRoutes);
+// PAYMENT & SUBSCRIPTION ROUTES
+app.use('/server/payment', authenticateUser, paymentRoutes);
+app.use('/server/subscription', authenticateUser, subscriptionRoutes);
 
 //TODO - move middleware above server routes and test
 

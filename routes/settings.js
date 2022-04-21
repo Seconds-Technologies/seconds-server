@@ -42,6 +42,30 @@ router.patch('/business-workflow', async (req, res, next) => {
 	}
 });
 
+router.post('/update-delivery-hours', async (req, res, next) => {
+	try {
+		const { email } = req.query;
+		console.table(req.body);
+		const user = await db.User.findOneAndUpdate({ email }, { deliveryHours: req.body }, { new: true });
+		if (user) {
+			console.log('Updated delivery hours');
+			return res.status(200).json({
+				updatedHours: user['deliveryHours'],
+				message: 'delivery hours updated'
+			});
+		} else {
+			return next({
+				status: 400,
+				message: 'No delivery hours detected!'
+			});
+		}
+	} catch (e) {
+		res.status(400).json({
+			message: e.message
+		});
+	}
+});
+
 router.patch('/update-providers', async (req, res, next) => {
 	try {
 		const { email } = req.query;
@@ -50,7 +74,7 @@ router.patch('/update-providers', async (req, res, next) => {
 		if (user) {
 			// use the clientId to search for their settings
 			let settings = await db.Settings.findOneAndUpdate({ clientId: user['_id'] }, { activeFleetProviders: req.body }, { new: true });
-			console.log(settings.activeFleetProviders);
+			console.log(settings['activeFleetProviders']);
 			res.status(200).json({ message: 'Providers updated successfully', ...settings.toObject()['activeFleetProviders'] });
 		} else {
 			return next({
@@ -66,5 +90,30 @@ router.patch('/update-providers', async (req, res, next) => {
 		});
 	}
 });
+
+router.patch('/toggle-integration-status', async(req, res, next) => {
+	try {
+		const { email } = req.query;
+		const { platform, status } = req.body;
+		console.table({ platform, status })
+		const user = await db.User.findOne({ email: email})
+		if (user) {
+			console.table(user[platform])
+			user[platform].active = status
+			await user.save()
+			res.status(200).json({ message: "SUCCESS", platform, status })
+		} else {
+			return next({
+				status: 404,
+				message: `No user found with email address ${email}`
+			})
+		}
+	} catch (err) {
+		console.error(err);
+		res.status(err.status ? err.status : 500).json({
+			message: err.message
+		});
+	}
+})
 
 module.exports = router;

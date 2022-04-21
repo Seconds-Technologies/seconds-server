@@ -35,11 +35,10 @@ const { getDrivers, createDriver, updateDriver, deleteDrivers } = require('../he
 
 router.post('/token', generateSecurityKeys);
 // user
+router.get('/sync-user', synchronizeUserInfo);
 router.post('/update-profile', updateProfile);
-router.post('/update-delivery-hours', updateDeliveryHours);
 router.post('/update-delivery-strategies', updateDeliveryStrategies);
 router.post('/upload', upload('seconds-profile-pictures').single('img'), uploadProfileImage);
-router.get('/sync-user', synchronizeUserInfo);
 //drivers
 router.get('/drivers', getDrivers);
 router.post('/create-driver', createDriver);
