@@ -133,30 +133,6 @@ const uploadProfileImage = async (req, res, next) => {
 	}
 };
 
-const updateDeliveryHours = async (req, res, next) => {
-	try {
-		const { email } = req.query;
-		console.table(req.body);
-		const user = await db.User.findOneAndUpdate({ email }, { deliveryHours: req.body }, { new: true });
-		if (user) {
-			console.log('Updated delivery hours');
-			return res.status(200).json({
-				updatedHours: user.deliveryHours,
-				message: 'delivery hours updated'
-			});
-		} else {
-			return next({
-				status: 400,
-				message: 'No delivery hours detected!'
-			});
-		}
-	} catch (e) {
-		res.status(400).json({
-			message: e.message
-		});
-	}
-};
-
 const updateDeliveryStrategies = async (req, res, next) => {
 	try {
 		const { email } = req.query;
@@ -486,7 +462,6 @@ const deleteOrders = async (req, res, next) => {
 module.exports = {
 	generateSecurityKeys,
 	updateProfile,
-	updateDeliveryHours,
 	uploadProfileImage,
 	updateDeliveryStrategies,
 	synchronizeUserInfo,
