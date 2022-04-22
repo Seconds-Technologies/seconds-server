@@ -84,6 +84,7 @@ const login = async (req, res, next) => {
 				);
 				let img = '';
 				if (profileImage && profileImage.filename) img = await getBase64Image(profileImage.filename, S3_BUCKET_NAMES.PROFILE_IMAGE);
+				let profileImageData = img ? `data:image/png;base64,${img}` : img
 				return res.status(200).json({
 					id: _id,
 					clientIds,
@@ -94,7 +95,7 @@ const login = async (req, res, next) => {
 					vehicle,
 					status,
 					isOnline,
-					profileImageData: `data:image/png;base64,${img}`,
+					profileImageData,
 					token,
 					apiKey,
 					message: 'You have logged in Successfully!'
