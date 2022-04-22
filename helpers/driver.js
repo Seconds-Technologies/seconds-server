@@ -85,6 +85,7 @@ const login = async (req, res, next) => {
 				let img = '';
 				if (profileImage && profileImage.filename) img = await getBase64Image(profileImage.filename, S3_BUCKET_NAMES.PROFILE_IMAGE);
 				let profileImageData = img ? `data:image/png;base64,${img}` : img
+				console.log("PROFILE", profileImageData)
 				return res.status(200).json({
 					id: _id,
 					clientIds,
