@@ -8,8 +8,8 @@ const moment = require('moment');
 const { S3_BUCKET_NAMES, ROUTE_OPTIMIZATION_OBJECTIVES } = require('../constants');
 const { VEHICLE_CODES } = require('@seconds-technologies/database_schemas/constants');
 const { checkGeolocationProximity, countVehicles } = require('./index');
-const PNF = require('google-libphonenumber').PhoneNumberFormat
-const phoneUtil = require('google-libphonenumber').PhoneNumberUtil.getInstance()
+const PNF = require('google-libphonenumber').PhoneNumberFormat;
+const phoneUtil = require('google-libphonenumber').PhoneNumberUtil.getInstance();
 const optimizationAxios = axios.create();
 optimizationAxios.defaults.headers.common['x-api-key'] = process.env.LOGISTICSOS_API_KEY;
 
@@ -78,7 +78,7 @@ const updateProfile = async (req, res, next) => {
 		};
 		axios
 			.put(`${process.env.MAGIC_BELL_HOST}/users/${magicbellId}`, payload, config)
-			.then(({ data }) => console.log("MagicBell", data.user))
+			.then(({ data }) => console.log('MagicBell', data.user))
 			.catch(err => console.error(err.response.data));
 		return res.status(200).json({
 			firstname,
@@ -105,12 +105,13 @@ const uploadProfileImage = async (req, res, next) => {
 	try {
 		const { id } = req.body;
 		const file = req.file;
+		console.log('ID', id);
 		console.log(file);
 		const location = req.file.location;
 		const filename = `${shorthash.unique(file.originalname)}.jpg`;
 		console.log('Image File:', filename);
-		//update the profile image in user db
-		const { profileImage } = await db.User.findByIdAndUpdate(
+		//update the profile image in user db if id belongs to a user
+		let user = await db.User.findByIdAndUpdate(
 			id,
 			{
 				'profileImage.filename': filename,
@@ -118,7 +119,20 @@ const uploadProfileImage = async (req, res, next) => {
 			},
 			{ new: true }
 		);
-		console.log(profileImage);
+		// update the profile image in driver db if id belongs to a driver
+		let driver = await db.Driver.findByIdAndUpdate(
+			id,
+			{
+				'profileImage.filename': filename,
+				'profileImage.location': location
+			},
+			{ new: true }
+		);
+		if (user) {
+			console.log("USER", user.profileImage);
+		} else {
+			console.log("DRIVER", driver.profileImage);
+		}
 		// retrieve image object from s3 convert to base64
 		let base64Image = await getBase64Image(filename, S3_BUCKET_NAMES.PROFILE_IMAGE);
 		return res.status(200).json({

@@ -22,7 +22,6 @@ const upload = bucket =>
 const {
 	generateSecurityKeys,
 	updateProfile,
-	updateDeliveryHours,
 	uploadProfileImage,
 	updateDeliveryStrategies,
 	synchronizeUserInfo,
