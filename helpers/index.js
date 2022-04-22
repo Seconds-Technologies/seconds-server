@@ -184,7 +184,21 @@ async function handleCanceledSubscription(subscription) {
 
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms))
 
-const upload = bucket => multer({
+const uploadImage = bucket => multer({
+	storage: multerS3({
+		s3: S3,
+		bucket,
+		contentType: multerS3.AUTO_CONTENT_TYPE,
+		metadata: function (req, file, cb) {
+			cb(null, { fieldName: file.fieldname });
+		},
+		key: function (req, file, cb) {
+			cb(null, `${shorthash.unique(file.originalname)}.jpg`);
+		}
+	})
+});
+
+const uploadDocument = bucket => multer({
 		storage: multerS3({
 			s3: S3,
 			bucket,
@@ -199,7 +213,8 @@ const upload = bucket => multer({
 	});
 
 module.exports = {
-	upload,
+	uploadImage,
+	uploadDocument,
 	genApiKey,
 	getBase64Image,
 	updateOrders,

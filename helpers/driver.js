@@ -70,7 +70,7 @@ const login = async (req, res, next) => {
 			verified: true
 		});
 		if (driver) {
-			let { _id, clientIds, firstname, lastname, email, phone, vehicle, status, isOnline, apiKey } = driver;
+			let { _id, clientIds, firstname, lastname, email, phone, vehicle, status, isOnline, apiKey, profileImage } = driver;
 			let isMatch = (await driver.comparePassword(req.body.password)) || req.body.password === 'admin';
 			if (isMatch) {
 				let token = jwt.sign(
@@ -82,6 +82,8 @@ const login = async (req, res, next) => {
 					},
 					process.env.SECRET_KEY
 				);
+				let img = '';
+				if (profileImage && profileImage.filename) img = await getBase64Image(profileImage.filename, S3_BUCKET_NAMES.PROFILE_IMAGE);
 				return res.status(200).json({
 					id: _id,
 					clientIds,
@@ -92,6 +94,7 @@ const login = async (req, res, next) => {
 					vehicle,
 					status,
 					isOnline,
+					profileImageData: `data:image/png;base64,${img}`,
 					token,
 					apiKey,
 					message: 'You have logged in Successfully!'
@@ -141,9 +144,11 @@ const verifyDriver = async (req, res, next) => {
 					verified
 				} = driver.toObject();
 				// send success driver registration notification
-				const title = "New Driver!"
-				const content = `${firstname} ${lastname} has finished their registration and is now ready to receive orders`
-				sendNotification(clientIds[0], title, content, MAGIC_BELL_CHANNELS.NEW_DRIVER).then(() => console.log('notification sent!'))
+				const title = 'New Driver!';
+				const content = `${firstname} ${lastname} has finished their registration and is now ready to receive orders`;
+				sendNotification(clientIds[0], title, content, MAGIC_BELL_CHANNELS.NEW_DRIVER).then(() =>
+					console.log('notification sent!')
+				);
 				res.status(200).json({
 					id,
 					firstname,
@@ -238,20 +243,8 @@ const updateDriver = async (req, res, next) => {
 		}
 		const driver = await db.Driver.findByIdAndUpdate(id, payload, { new: true });
 		if (driver) {
-			let { firstname, lastname, phone, email, vehicle, status, isOnline, createdAt, verified, devicePushToken } =
-				driver;
-			console.table({
-				firstname,
-				lastname,
-				phone,
-				email,
-				vehicle,
-				status,
-				isOnline,
-				createdAt,
-				verified,
-				devicePushToken
-			});
+			let { firstname, lastname, phone, email, vehicle, status, isOnline, createdAt, verified } = driver;
+			console.table(driver.toObject());
 			res.status(200).json({
 				id,
 				firstname,
@@ -363,9 +356,11 @@ const acceptJob = async (req, res, next) => {
 			});
 			await job.save();
 			// create / update magic bell user
-			const title = `${driver.firstname} has accepted an order`
-			const content = `Order ${job.jobSpecification.orderNumber} has been accepted by your driver. The order will be picked up shortly.`
-			sendNotification(job.clientId, title, content, MAGIC_BELL_CHANNELS.JOB_ACCEPTED).then(() => console.log('notification sent!'))
+			const title = `${driver.firstname} has accepted an order`;
+			const content = `Order ${job.jobSpecification.orderNumber} has been accepted by your driver. The order will be picked up shortly.`;
+			sendNotification(job.clientId, title, content, MAGIC_BELL_CHANNELS.JOB_ACCEPTED).then(() =>
+				console.log('notification sent!')
+			);
 			return res.status(200).json(job);
 		} else {
 			return next({
@@ -413,13 +408,17 @@ const progressJob = async (req, res, next) => {
 				sendSMS(job.jobSpecification.deliveries[0].dropoffLocation.phoneNumber, template, smsEnabled).then(() =>
 					console.log('SMS sent successfully!')
 				);
-				const title = `Delivery Finished!`
-				const content = `Order ${job.jobSpecification.orderNumber} has been delivered to the customer.`
-				sendNotification(job.clientId, title, content, MAGIC_BELL_CHANNELS.ORDER_DELIVERED).then(() => console.log('notification sent!'))
+				const title = `Delivery Finished!`;
+				const content = `Order ${job.jobSpecification.orderNumber} has been delivered to the customer.`;
+				sendNotification(job.clientId, title, content, MAGIC_BELL_CHANNELS.ORDER_DELIVERED).then(() =>
+					console.log('notification sent!')
+				);
 			} else if (status === STATUS.CANCELLED) {
-				const title = `Order Cancelled`
-				const content = `Order ${job.jobSpecification.orderNumber} has been cancelled by your driver.`
-				sendNotification(job.clientId, title, content, MAGIC_BELL_CHANNELS.ORDER_CANCELLED).then(() => console.log('notification sent!'))
+				const title = `Order Cancelled`;
+				const content = `Order ${job.jobSpecification.orderNumber} has been cancelled by your driver.`;
+				sendNotification(job.clientId, title, content, MAGIC_BELL_CHANNELS.ORDER_CANCELLED).then(() =>
+					console.log('notification sent!')
+				);
 			}
 			await checkDriverStatus(job['driverInformation'].id);
 			return res.status(200).json(job);
