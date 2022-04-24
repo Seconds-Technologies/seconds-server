@@ -193,7 +193,7 @@ const uploadImage = bucket => multer({
 			cb(null, { fieldName: file.fieldname });
 		},
 		key: function (req, file, cb) {
-			cb(null, `${shorthash.unique(file.originalname)}.jpg`);
+			cb(null, `public/${shorthash.unique(file.originalname)}.jpg`);
 		}
 	})
 });
