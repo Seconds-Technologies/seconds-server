@@ -54,6 +54,7 @@ const login = async (req, res, next) => {
 			if (filename) img = await getBase64Image(filename, S3_BUCKET_NAMES.PROFILE_IMAGE);
 			// get drivers
 			let drivers = await db.Driver.find({ clientIds: _id });
+			drivers.sort((a, b) => b.createdAt - a.createdAt);
 			drivers = drivers.map(driver => {
 				let {
 					_id: id,
@@ -65,7 +66,8 @@ const login = async (req, res, next) => {
 					status,
 					isOnline,
 					createdAt,
-					verified
+					verified,
+					profileImage
 				} = driver.toObject()
 				return {
 					id,
@@ -77,7 +79,8 @@ const login = async (req, res, next) => {
 					status,
 					isOnline,
 					createdAt,
-					verified
+					verified,
+					profileImageKey: profileImage ? profileImage.filename : ''
 				}
 			})
 			// fetch settings
