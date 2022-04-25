@@ -31,6 +31,7 @@ exports.connectShopify = async (req, res, next) => {
 				{ email },
 				{
 					shopify: {
+						active: true,
 						accessToken: password,
 						shopId: id,
 						domain: myshopify_domain,
@@ -41,6 +42,7 @@ exports.connectShopify = async (req, res, next) => {
 				{ new: true }
 			);		// append the shop id to user mongo
 			return res.status(200).json({
+				active: true,
 				shopId: id,
 				domain: myshopify_domain,
 				country,
@@ -68,9 +70,7 @@ exports.getShopifyDetails = async (req, res, next) => {
 		let { email } = req.body;
 		let { shopify } = await db.User.findOne({ email });
 		if (shopify.accessToken || shopify.shopId) {
-			res.status(200).json({
-				...shopify
-			});
+			res.status(200).json(shopify);
 		} else {
 			throw new Error('This user has no shopify account integrated');
 		}
