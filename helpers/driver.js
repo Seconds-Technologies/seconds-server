@@ -10,6 +10,7 @@ const shorthash = require('shorthash');
 const nanoid = customAlphabet('1234567890', 6);
 const { Client } = require('@googlemaps/google-maps-services-js');
 const sendNotification = require('../services/notification');
+const bcrypt = require('bcrypt');
 
 const GMapsClient = new Client();
 
@@ -236,16 +237,17 @@ const createDriver = async (req, res, next) => {
 
 const updateDriver = async (req, res, next) => {
 	try {
-		let { id, password, confirmPassword, ...payload } = req.body;
+		let { id, password, ...payload } = req.body;
 		// check if password was updated
 		if (password) {
 			// add password to payload
-			payload = { ...payload, password };
+			let encPassword = await bcrypt.hash(password, 10);
+			payload = { ...payload, password: encPassword };
 		}
 		const driver = await db.Driver.findByIdAndUpdate(id, payload, { new: true });
 		if (driver) {
 			let { firstname, lastname, phone, email, vehicle, status, isOnline, createdAt, verified } = driver;
-			console.table(driver.toObject());
+			console.log(driver.toObject());
 			res.status(200).json({
 				id,
 				firstname,
