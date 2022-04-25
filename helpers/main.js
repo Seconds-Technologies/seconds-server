@@ -108,7 +108,7 @@ const uploadProfileImage = async (req, res, next) => {
 		console.log('ID', id);
 		console.log(file);
 		const location = req.file.location;
-		const filename = `${shorthash.unique(file.originalname)}.jpg`;
+		const filename = `public/${shorthash.unique(file.originalname)}.jpg`;
 		console.log('Image File:', filename);
 		//update the profile image in user db if id belongs to a user
 		let user = await db.User.findByIdAndUpdate(
