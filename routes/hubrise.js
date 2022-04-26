@@ -131,10 +131,10 @@ router.patch('/disconnect', async (req, res, next) => {
 		const { email } = req.body;
 		const user = await db.User.findOne({ email });
 		if (user) {
-			const hubrise = await db.User.findOne({ clientId: user._id });
+			const hubrise = await db.User.findOne({ clientId: user['_id'] });
 			if (hubrise) {
-				// delete the catalog from the db
-				await db.Catalog.findOneAndDelete({ clientId: user['_id'] });
+				// delete catalogs from the db belonging to the user
+				await db.Catalog.deleteMany({ clientId: user['_id'] });
 				// delete hubrise user from the db
 				await db.Hubrise.findOneAndDelete({ clientId: user['_id'] });
 				// delete the hubrise callback
@@ -148,7 +148,6 @@ router.patch('/disconnect', async (req, res, next) => {
 				console.log('-----------------------------------------------');
 				console.log(result);
 				console.log('-----------------------------------------------');
-				console.log(user['hubrise']);
 				res.status(200).json({ message: 'Hubrise account has been disconnected' });
 			} else {
 				return next({
@@ -163,7 +162,7 @@ router.patch('/disconnect', async (req, res, next) => {
 			})
 		}
 	} catch (err) {
-		if (err.response.data) {
+		if (err.response && err.response.data) {
 			console.log(err.response.data);
 			return err.response.data.message
 				? next({
@@ -297,7 +296,7 @@ router.get('/pull-catalog', async (req, res, next) => {
 			throw error;
 		}
 	} catch (err) {
-		if (err.response.data) {
+		if (err.response && err.response.data) {
 			console.log(err.response.data);
 			return err.response.data.message
 				? next({
