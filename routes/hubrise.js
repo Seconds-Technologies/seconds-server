@@ -161,13 +161,13 @@ router.get('/pull-catalog', async (req, res) => {
 		if (user) {
 			const hubrise = await db.Hubrise.findOne({clientId: user['_id']});
 			if (hubrise) {
-				let { locationId } = hubrise;
+				let { locationId, accessToken } = hubrise;
 				const locationEndpoint = `/locations/${locationId}/catalogs`;
 				const locationURL = process.env.HUBRISE_API_BASE_URL + locationEndpoint;
 				console.table({ locationURL });
 				const config = {
 					headers: {
-						'X-Access-Token': user['hubrise'].accessToken
+						'X-Access-Token': accessToken
 					}
 				};
 				// fetch catalogs under the connected hubrise location
