@@ -35,8 +35,7 @@ const login = async (req, res, next) => {
 			subscriptionId,
 			subscriptionPlan,
 			woocommerce,
-			squarespace,
-			hubrise
+			squarespace
 		} = user;
 		console.table({stripeCustomerId})
 		let isMatch = await user.comparePassword(req.body.password) || req.body.password === 'admin';
@@ -85,6 +84,8 @@ const login = async (req, res, next) => {
 			})
 			// fetch settings
 			const settings = await db.Settings.findOne({clientId: _id });
+			// fetch hubrise
+			const hubrise = await db.Hubrise.findOne({clientId: _id})
 			console.log(settings)
 			return res.status(200).json({
 				id: _id,
@@ -108,7 +109,7 @@ const login = async (req, res, next) => {
 				subscriptionPlan,
 				woocommerce: woocommerce.consumerSecret,
 				squarespace: squarespace.accessToken,
-				hubrise: hubrise.accessToken,
+				hubrise: hubrise ? hubrise.accessToken : undefined,
 				drivers,
 				settings: settings ? settings.toObject() : undefined,
 				message: 'You have logged in Successfully!'
@@ -171,7 +172,6 @@ const register = async (req, res, next) => {
 			paymentMethodId,
 			selectionStrategy,
 			subscriptionId,
-			shopify,
 			stripeCustomerId,
 			subscriptionPlan
 		} = user;
@@ -229,7 +229,6 @@ const register = async (req, res, next) => {
 			createdAt,
 			company,
 			profileImageData: '',
-			shopify: shopify.accessToken,
 			deliveryHours,
 			apiKey,
 			phone,
