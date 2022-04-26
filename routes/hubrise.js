@@ -133,16 +133,16 @@ router.patch('/disconnect', async (req, res, next) => {
 		if (user) {
 			const hubrise = await db.User.findOne({ clientId: user['_id'] });
 			if (hubrise) {
-				// delete catalogs from the db belonging to the user
-				await db.Catalog.deleteMany({ clientId: user['_id'] });
-				// delete hubrise user from the db
-				await db.Hubrise.findOneAndDelete({ clientId: user['_id'] });
 				// delete the hubrise callback
 				let config = {
 					headers: {
 						'X-Access-Token': hubrise['accessToken']
 					}
 				};
+				// delete catalogs from the db belonging to the user
+				await db.Catalog.deleteMany({ clientId: user['_id'] });
+				// delete hubrise user from the db
+				await db.Hubrise.findOneAndDelete({ clientId: user['_id'] });
 				const URL = `${process.env.HUBRISE_API_BASE_URL}/callback`;
 				const result = (await axios.delete(URL, config)).data;
 				console.log('-----------------------------------------------');
