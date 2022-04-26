@@ -11,12 +11,12 @@ router.get('/', async (req, res, next) => {
 		const user = await db.User.findOne({ email });
 		if (user) {
 			// fetch the hubrise catalog
-			const hubriseUser = await db.Hubrise.findOne({clientId: user['_id']})
-			const catalog = await db.Catalog.findOne({ clientId: user['_id'] })
+			const hubriseUser = await db.Hubrise.findOne({ clientId: user['_id'] });
+			const catalog = await db.Catalog.findOne({ clientId: user['_id'] });
 
-			let hubrise = catalog ? { hubriseUser, catalog } : hubriseUser
+			let hubrise = catalog ? { hubriseUser, catalog } : hubriseUser;
 			if (hubrise.accessToken) {
-				let { accessToken, ...payload} = hubrise;
+				let { accessToken, ...payload } = hubrise;
 				res.status(200).json(payload);
 			} else {
 				throw new Error('This user has no hubrise account integrated');
@@ -84,7 +84,7 @@ router.get('/connect', async (req, res, next) => {
 			accountName: result.account_name,
 			accountId: result.account_id,
 			locationName: result.location_name,
-			locationId: result.location_id,
+			locationId: result.location_id
 		});
 		// create webhook subscription
 		URL = `${process.env.HUBRISE_API_BASE_URL}/callback`;
@@ -112,13 +112,13 @@ router.get('/connect', async (req, res, next) => {
 			console.log(err.response.data);
 			return err.response.data.message
 				? next({
-					status: err.response.status,
-					message: err.response.data.message
-				})
+						status: err.response.status,
+						message: err.response.data.message
+				  })
 				: next({
-					status: err.response.status,
-					message: err.response.data['error_type']
-				});
+						status: err.response.status,
+						message: err.response.data['error_type']
+				  });
 		} else {
 			console.error('ERROR', err);
 			res.status(500).json({ message: err.message });
@@ -129,37 +129,51 @@ router.get('/connect', async (req, res, next) => {
 router.patch('/disconnect', async (req, res, next) => {
 	try {
 		const { email } = req.body;
-		const user = await db.User.findOne(	{ email: email });
+		const user = await db.User.findOne({ email });
 		if (user) {
-			// delete the catalog from the db
-			await db.Catalog.findOneAndDelete({clientId: user['_id']})
-			// delete hubrise user from the db
-			await db.Hubrise.findOneAndDelete({clientId: user['_id']})
-			// delete the hubrise callback
-			const URL = 'https://api.hubrise.com/v1/callback';
-			const result = (await axios.delete(URL)).data
-			console.log('-----------------------------------------------');
-			console.log(result)
-			console.log('-----------------------------------------------');
-			console.log(user['hubrise']);
-			res.status(200).json({ message: 'Hubrise account has been disconnected' });
+			const hubrise = await db.User.findOne({ clientId: user._id });
+			if (hubrise) {
+				// delete the catalog from the db
+				await db.Catalog.findOneAndDelete({ clientId: user['_id'] });
+				// delete hubrise user from the db
+				await db.Hubrise.findOneAndDelete({ clientId: user['_id'] });
+				// delete the hubrise callback
+				let config = {
+					headers: {
+						'X-Access-Token': hubrise['accessToken']
+					}
+				};
+				const URL = `${process.env.HUBRISE_API_BASE_URL}/callback`;
+				const result = (await axios.delete(URL, config)).data;
+				console.log('-----------------------------------------------');
+				console.log(result);
+				console.log('-----------------------------------------------');
+				console.log(user['hubrise']);
+				res.status(200).json({ message: 'Hubrise account has been disconnected' });
+			} else {
+				return next({
+					status: 404,
+					message: `User has no hubrise account integrated`
+				})
+			}
 		} else {
-			let error = new Error(`User with email ${email} could not be found`);
-			error.status = 404;
-			throw error;
+			return next({
+				status: 404,
+				message:`User with email ${email} could not be found`
+			})
 		}
 	} catch (err) {
 		if (err.response.data) {
 			console.log(err.response.data);
 			return err.response.data.message
 				? next({
-					status: err.response.status,
-					message: err.response.data.message
-				})
+						status: err.response.status,
+						message: err.response.data.message
+				  })
 				: next({
-					status: err.response.status,
-					message: err.response.data['error_type']
-				});
+						status: err.response.status,
+						message: err.response.data['error_type']
+				  });
 		} else {
 			console.error('ERROR', err);
 			res.status(500).json({ message: err.message });
@@ -177,7 +191,7 @@ router.get('/pull-catalog', async (req, res, next) => {
 		let CATALOG_NAME;
 		const HUBRISE_CATALOGS = [];
 		if (user) {
-			const hubrise = await db.Hubrise.findOne({clientId: user['_id']});
+			const hubrise = await db.Hubrise.findOne({ clientId: user['_id'] });
 			if (hubrise) {
 				let { locationId, accessToken } = hubrise;
 				const locationEndpoint = `/locations/${locationId}/catalogs`;
@@ -212,20 +226,14 @@ router.get('/pull-catalog', async (req, res, next) => {
 							parentRef: parent_ref,
 							tags
 						}));
-						let products = data.products.map(({
-                              name,
-                              description,
-                              skus,
-                              category_id,
-                              tags,
-                              ref
-                          }, index) => {
-							console.log(`PRODUCT: #${index}`);
-							//console.table({ id, name, description, skus, category_ref, tags, ref });
-							let variants = skus.map(
-								({ id, name, product_id, price, ref, tags, option_list_ids }, index) => {
-									console.log(`VARIANT: #${index}`);
-									/*console.table({
+						let products = data.products.map(
+							({ name, description, skus, category_id, tags, ref }, index) => {
+								console.log(`PRODUCT: #${index}`);
+								//console.table({ id, name, description, skus, category_ref, tags, ref });
+								let variants = skus.map(
+									({ id, name, product_id, price, ref, tags, option_list_ids }, index) => {
+										console.log(`VARIANT: #${index}`);
+										/*console.table({
 										id,
 										name,
 										product_id,
@@ -234,27 +242,28 @@ router.get('/pull-catalog', async (req, res, next) => {
 										tags,
 										option_list_ids
 									});*/
-									return {
-										variantId: id,
-										name,
-										price: Number(price.split(' ')[0]).toFixed(2),
-										ref,
-										productId: product_id,
-										tags,
-										options: option_list_ids
-									};
-								}
-							);
-							return {
-								productId: id,
-								name,
-								description,
-								categoryId: category_id,
-								tags,
-								variants
-							};
-							// for each product, store the sku id, product id, sku name, product name, categoryRef, description
-						});
+										return {
+											variantId: id,
+											name,
+											price: Number(price.split(' ')[0]).toFixed(2),
+											ref,
+											productId: product_id,
+											tags,
+											options: option_list_ids
+										};
+									}
+								);
+								return {
+									productId: id,
+									name,
+									description,
+									categoryId: category_id,
+									tags,
+									variants
+								};
+								// for each product, store the sku id, product id, sku name, product name, categoryRef, description
+							}
+						);
 						const catalog = {
 							clientId: user['_id'],
 							hubriseId: hubrise['_id'],
@@ -264,22 +273,21 @@ router.get('/pull-catalog', async (req, res, next) => {
 							products,
 							categories
 						};
-						console.log(catalog)
-						CATALOG = await db.Catalog.create(catalog);
-						// append catalogId to hubrise
-						CATALOG = catalog
-						CATALOG_ID = id
-						CATALOG_NAME = name
+						console.log(catalog);
+						await db.Catalog.create(catalog);
+						CATALOG = catalog;
+						CATALOG_ID = id;
+						CATALOG_NAME = name;
 					})
 				);
 				res.status(200).json({
-					message: "Catalog pulled successfully!",
+					message: 'Catalog pulled successfully!',
 					catalog: CATALOG,
 					catalogId: CATALOG_ID,
-					catalogName: CATALOG_NAME,
+					catalogName: CATALOG_NAME
 				});
 			} else {
-				let error = new Error(`This usser has no hubrise account integrated`);
+				let error = new Error(`This user has no hubrise account integrated`);
 				error.status = 404;
 				throw error;
 			}
@@ -309,35 +317,41 @@ router.get('/pull-catalog', async (req, res, next) => {
 
 router.get('/fetch-catalog', async (req, res) => {
 	try {
-
 	} catch (err) {
-	    console.error(err)
+		console.error(err);
 	}
-})
+});
 
 router.post('/update-catalog', async (req, res) => {
 	try {
 		const { email } = req.query;
-		const { data } = req.body
-		console.log(data)
-		const user = await db.User.findOne({ email: email })
+		const { data } = req.body;
+		console.log(data);
+		const user = await db.User.findOne({ email: email });
 		if (user) {
-			const catalog = await db.Catalog.find({clientId: user['_id']})
+			const catalog = await db.Catalog.find({ clientId: user['_id'] });
 			if (catalog) {
 				// find the matching variant ref to update
 				for (let item of data) {
 					catalog['products'].forEach(({ variants }, productIdx) => {
 						variants.forEach(({ ref }, variantIdx) => {
 							if (ref === item.id) {
-								catalog['products'][productIdx].variants[variantIdx].weight = item.value
-								console.log(`New weight assigned to product variant ${ref}`)
+								catalog['products'][productIdx].variants[variantIdx].weight = item.value;
+								console.log(`New weight assigned to product variant ${ref}`);
 							}
-						})
-					})
+						});
+					});
 				}
-				await catalog.save()
-				catalog['products'].forEach(prod => prod.variants.forEach(({ref, weight}) => console.table({ ref, weight})))
-				res.status(200).json({message: "Catalog updated successfully!", catalog})
+				await catalog.save();
+				catalog['products'].forEach(prod =>
+					prod.variants.forEach(({ ref, weight }) =>
+						console.table({
+							ref,
+							weight
+						})
+					)
+				);
+				res.status(200).json({ message: 'Catalog updated successfully!', catalog });
 			} else {
 				let error = new Error(`The user with email ${email} has no associated catalog`);
 				error.status = 404;
@@ -356,6 +370,6 @@ router.post('/update-catalog', async (req, res) => {
 		}
 		res.status(500).json({ message: err.message });
 	}
-})
+});
 
 module.exports = router;
