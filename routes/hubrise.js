@@ -239,6 +239,7 @@ router.get('/pull-catalog', async (req, res) => {
 						});
 						const catalog = {
 							clientId: user['_id'],
+							hubriseId: hubrise['_id'],
 							locationId: location_id,
 							catalogId: id,
 							catalogName: name,
@@ -247,6 +248,7 @@ router.get('/pull-catalog', async (req, res) => {
 						};
 						console.log(catalog)
 						CATALOG = await db.Catalog.create(catalog);
+						// append catalogId to hubrise
 						CATALOG = catalog
 						CATALOG_ID = id
 						CATALOG_NAME = name
