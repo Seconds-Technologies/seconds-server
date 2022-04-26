@@ -61,7 +61,7 @@ router.post('/authorize', async (req, res) => {
 	}
 });
 
-router.get('/connect', async (req, res) => {
+router.get('/connect', async (req, res, next) => {
 	try {
 		const { code, email } = req.query;
 		const user = await db.User.findOne({ email: email }, { hubrise: 1 });
@@ -108,12 +108,21 @@ router.get('/connect', async (req, res) => {
 		const { accessToken, ...hubrise } = hubriseUser.toObject();
 		res.status(200).json(hubrise);
 	} catch (err) {
-		if (err.response) {
+		if (err.response.data) {
 			console.log(err.response.data);
+			return err.response.data.message
+				? next({
+					status: err.response.status,
+					message: err.response.data.message
+				})
+				: next({
+					status: err.response.status,
+					message: err.response.data['error_type']
+				});
 		} else {
 			console.error('ERROR', err);
+			res.status(500).json({ message: err.message });
 		}
-		res.status(500).json({ message: err.message });
 	}
 });
 
@@ -140,16 +149,25 @@ router.patch('/disconnect', async (req, res, next) => {
 			throw error;
 		}
 	} catch (err) {
-		if (err.response) {
+		if (err.response.data) {
 			console.log(err.response.data);
+			return err.response.data.message
+				? next({
+					status: err.response.status,
+					message: err.response.data.message
+				})
+				: next({
+					status: err.response.status,
+					message: err.response.data['error_type']
+				});
 		} else {
 			console.error('ERROR', err);
+			res.status(500).json({ message: err.message });
 		}
-		res.status(500).json({ message: err.message });
 	}
 });
 
-router.get('/pull-catalog', async (req, res) => {
+router.get('/pull-catalog', async (req, res, next) => {
 	try {
 		const { email } = req.query;
 		const user = await db.User.findOne({ email });
@@ -271,12 +289,21 @@ router.get('/pull-catalog', async (req, res) => {
 			throw error;
 		}
 	} catch (err) {
-		if (err.response) {
+		if (err.response.data) {
 			console.log(err.response.data);
+			return err.response.data.message
+				? next({
+						status: err.response.status,
+						message: err.response.data.message
+				  })
+				: next({
+						status: err.response.status,
+						message: err.response.data['error_type']
+				  });
 		} else {
 			console.error('ERROR', err);
+			res.status(500).json({ message: err.message });
 		}
-		res.status(500).json({ message: err.message });
 	}
 });
 
