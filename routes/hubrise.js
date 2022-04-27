@@ -11,12 +11,12 @@ router.get('/', async (req, res, next) => {
 		const user = await db.User.findOne({ email });
 		if (user) {
 			// fetch the hubrise catalog
-			const hubriseUser = await db.Hubrise.findOne({ clientId: user['_id'] });
+			const hubrise = await db.Hubrise.findOne({ clientId: user['_id'] });
 			const catalog = await db.Catalog.findOne({ clientId: user['_id'] });
-
-			let hubrise = catalog ? { hubriseUser, catalog } : hubriseUser;
-			if (hubrise.accessToken) {
-				let { accessToken, ...payload } = hubrise;
+			if (hubrise) {
+				let { accessToken, options, ...credentials } = hubrise.toObject();
+				const payload = { credentials, options, catalog }
+				console.log(payload)
 				res.status(200).json(payload);
 			} else {
 				throw new Error('This user has no hubrise account integrated');
@@ -180,6 +180,35 @@ router.patch('/disconnect', async (req, res, next) => {
 	}
 });
 
+router.patch('/update-hubrise', async (req, res, next) => {
+	try {
+	    const { email } = req.query;
+		console.table(req.body)
+		const user = await db.User.findOne({ email})
+		if (user) {
+			const hubrise = await db.Hubrise.findOne({clientId: user['_id']})
+			if (hubrise) {
+				hubrise.options = req.body
+				await hubrise.save()
+				res.status(200).json({message: 'Hubrise updated successfully' })
+			} else {
+				return next({
+					status: 404,
+					message: `User has no hubrise account integrated`
+				})
+			}
+		} else {
+			return next({
+				status: 404,
+				message:`User with email ${email} could not be found`
+			})
+		}
+	} catch (err) {
+		console.error('ERROR', err);
+		res.status(500).json({ message: err.message });
+	}
+})
+
 router.get('/pull-catalog', async (req, res, next) => {
 	try {
 		const { email } = req.query;
@@ -321,10 +350,10 @@ router.get('/fetch-catalog', async (req, res) => {
 	}
 });
 
-router.post('/update-catalog', async (req, res) => {
+router.patch('/update-catalog', async (req, res) => {
 	try {
 		const { email } = req.query;
-		const { data } = req.body;
+		const data = req.body;
 		console.log(data);
 		const user = await db.User.findOne({ email: email });
 		if (user) {
