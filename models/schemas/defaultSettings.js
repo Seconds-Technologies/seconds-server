@@ -29,9 +29,9 @@ exports.defaultSettings = {
 	courierPriceThreshold: 10,
 	courierSelectionCriteria: 'eta',
 	activeFleetProviders: {
-		stuart: false,
-		gophr: false,
-		street_stream: false,
+		stuart: true,
+		gophr: true,
+		street_stream: true,
 		ecofleet: false,
 		addison_lee: false
 	},
