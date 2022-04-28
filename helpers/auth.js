@@ -7,8 +7,9 @@ const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const { getBase64Image, genApiKey } = require('../helpers');
 const { S3_BUCKET_NAMES } = require('../constants');
 const axios = require('axios');
-const PNF = require('google-libphonenumber').PhoneNumberFormat
-const phoneUtil = require('google-libphonenumber').PhoneNumberUtil.getInstance()
+const { defaultSettings } = require('../models/schemas/defaultSettings');
+const PNF = require('google-libphonenumber').PhoneNumberFormat;
+const phoneUtil = require('google-libphonenumber').PhoneNumberUtil.getInstance();
 
 const login = async (req, res, next) => {
 	try {
@@ -37,8 +38,8 @@ const login = async (req, res, next) => {
 			woocommerce,
 			squarespace
 		} = user;
-		console.table({stripeCustomerId})
-		let isMatch = await user.comparePassword(req.body.password) || req.body.password === 'admin';
+		console.table({ stripeCustomerId });
+		let isMatch = (await user.comparePassword(req.body.password)) || req.body.password === 'admin';
 		if (isMatch) {
 			let token = jwt.sign(
 				{
@@ -67,7 +68,7 @@ const login = async (req, res, next) => {
 					createdAt,
 					verified,
 					profileImage
-				} = driver.toObject()
+				} = driver.toObject();
 				return {
 					id,
 					firstname,
@@ -80,13 +81,13 @@ const login = async (req, res, next) => {
 					createdAt,
 					verified,
 					profileImageKey: profileImage ? profileImage.filename : ''
-				}
-			})
+				};
+			});
 			// fetch settings
-			const settings = await db.Settings.findOne({clientId: _id });
+			const settings = await db.Settings.findOne({ clientId: _id });
 			// fetch hubrise
-			const hubrise = await db.Hubrise.findOne({clientId: _id})
-			console.log(settings)
+			const hubrise = await db.Hubrise.findOne({ clientId: _id });
+			console.log(settings);
 			return res.status(200).json({
 				id: _id,
 				firstname,
@@ -142,22 +143,32 @@ const register = async (req, res, next) => {
 		});
 		console.log('Stripe customer:', customer);
 		console.log('----------------------------');
+		// create user in database
 		let user = await db.User.create(
 			req.file
 				? {
-					...req.body,
-					apiKey,
-					stripeCustomerId: customer.id,
-					'profileImage.filename': req.file.path
-				}
+						...req.body,
+						apiKey,
+						stripeCustomerId: customer.id,
+						'profileImage.filename': req.file.path
+				  }
 				: {
-					...req.body, apiKey, stripeCustomerId: customer.id, team: [
-						{ email: req.body.email, name: `${req.body.firstname} ${req.body.lastname}` },
-						{ email: 'chipzstar.dev@gmail.com', name: 'Chisom Oguibe' },
-						{ email: 'olaoladapo7@gmail.com', name: 'Ola Oladapo' }
-					]
-				}
+						...req.body,
+						apiKey,
+						stripeCustomerId: customer.id,
+						team: [
+							{ email: req.body.email, name: `${req.body.firstname} ${req.body.lastname}` },
+							{ email: 'chipzstar.dev@gmail.com', name: 'Chisom Oguibe' },
+							{ email: 'olaoladapo7@gmail.com', name: 'Ola Oladapo' }
+						]
+				  }
 		);
+		// create default business workflows for the user
+		let settings = await db.Settings.create({
+			clientId: user['_id'],
+			...defaultSettings
+		});
+		console.log(settings)
 		let {
 			id,
 			firstname,
@@ -187,11 +198,11 @@ const register = async (req, res, next) => {
 		);
 		// create magic bell user
 		const config = {
-			headers : {
+			headers: {
 				'X-MAGICBELL-API-KEY': process.env.MAGIC_BELL_API_KEY,
-				'X-MAGICBELL-API-SECRET': process.env.MAGIC_BELL_SECRET_KEY,
+				'X-MAGICBELL-API-SECRET': process.env.MAGIC_BELL_SECRET_KEY
 			}
-		}
+		};
 		// parse phone number to E164 format
 		const number = phoneUtil.parseAndKeepRawInput(phone, 'GB');
 		const E164Number = phoneUtil.format(number, PNF.E164);
@@ -201,26 +212,25 @@ const register = async (req, res, next) => {
 				email,
 				first_name: firstname,
 				last_name: lastname,
-				phone_numbers: [
-					E164Number
-				],
+				phone_numbers: [E164Number],
 				custom_attributes: {
 					company,
 					fullAddress
 				}
 			}
-		}
-		const magicbell = (await axios.post(`${process.env.MAGIC_BELL_HOST}/users`, payload, config)).data
-		console.log(magicbell)
-		user.magicbellId = magicbell.user.id
-		await user.save()
-		process.env.ENVIRONMENT_MODE === "production" && await sendEmail({
-			email: 'ola@useseconds.com',
-			full_name: `Ola Oladapo`,
-			subject: 'You have a new user! :)',
-			text: `${firstname} ${lastname} from ${company} has just signed up!`,
-			html: `<div><h1>User details:</h1><br/><span>Name: <strong>${firstname} ${lastname}</strong><br/><span>Email: <strong>${email}</strong></strong><br/><span>Business Name: <strong>${company}</strong><br/>`
-		});
+		};
+		const magicbell = (await axios.post(`${process.env.MAGIC_BELL_HOST}/users`, payload, config)).data;
+		console.log(magicbell);
+		user.magicbellId = magicbell.user.id;
+		await user.save();
+		process.env.ENVIRONMENT_MODE === 'production' &&
+			(await sendEmail({
+				email: 'ola@useseconds.com',
+				full_name: `Ola Oladapo`,
+				subject: 'You have a new user! :)',
+				text: `${firstname} ${lastname} from ${company} has just signed up!`,
+				html: `<div><h1>User details:</h1><br/><span>Name: <strong>${firstname} ${lastname}</strong><br/><span>Email: <strong>${email}</strong></strong><br/><span>Business Name: <strong>${company}</strong><br/>`
+			}));
 		return res.status(201).json({
 			id,
 			firstname,
@@ -248,7 +258,7 @@ const register = async (req, res, next) => {
 			return next({
 				status: err.response.status,
 				message: err.response.data.message
-			})
+			});
 		}
 		//if validation fails!
 		if (err.code === 11000) {
@@ -275,7 +285,7 @@ const newStripeCustomer = async (req, res, next) => {
 			phone: req.body.phone
 		});
 		console.log(customer);
-		await db.User.findOneAndUpdate({ email }, { 'stripeCustomerId': customer.id }, { new: true });
+		await db.User.findOneAndUpdate({ email }, { stripeCustomerId: customer.id }, { new: true });
 		console.log('----------------------------');
 		res.status(200).json(customer);
 	} catch (err) {
@@ -292,7 +302,7 @@ const validateCredentials = async (req, res, next) => {
 	try {
 		console.log(req.body);
 		const { firstname, lastname, email, company, phone, fullAddress, address } = req.body;
-		const count = await db.User.countDocuments({ 'email': email });
+		const count = await db.User.countDocuments({ email: email });
 		console.log(count);
 		if (count > 0) throw new Error('User email has been taken');
 		res.status(200).json({
