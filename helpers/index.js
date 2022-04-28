@@ -5,7 +5,7 @@ const multer = require('multer');
 const multerS3 = require('multer-s3');
 const shorthash = require('shorthash');
 const moment = require('moment');
-const { VEHICLE_CODES } = require('@seconds-technologies/database_schemas/constants');
+const { VEHICLE_CODES, HUBRISE_STATUS, STATUS } = require('@seconds-technologies/database_schemas/constants');
 
 function genApiKey() {
 	let apiKey = '';
@@ -48,6 +48,25 @@ function countVehicles(drivers){
 		})
 	})
 	return counts
+}
+
+function convertToHubriseStatus(status){
+	switch (status){
+		case STATUS.NEW:
+			return HUBRISE_STATUS.NEW
+		case STATUS.PENDING:
+			return HUBRISE_STATUS.RECEIVED
+		case STATUS.DISPATCHING:
+			return HUBRISE_STATUS.IN_PREPARATION
+		case STATUS.EN_ROUTE:
+			return HUBRISE_STATUS.IN_DELIVERY
+		case STATUS.COMPLETED:
+			return HUBRISE_STATUS.COMPLETED
+		case STATUS.CANCELLED:
+			return HUBRISE_STATUS.CANCELLED
+		default:
+			return HUBRISE_STATUS.DELIVERY_FAILED
+	}
 }
 
 async function getBase64Image(filename, bucketName) {
@@ -224,5 +243,6 @@ module.exports = {
 	handleCanceledSubscription,
 	checkGeolocationProximity,
 	countVehicles,
+	convertToHubriseStatus,
 	delay,
 };
