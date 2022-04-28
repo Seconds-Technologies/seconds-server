@@ -10,7 +10,7 @@ exports.defaultSettings = {
 	autoDispatch: {
 		enabled: true,
 		maxOrders: 3,
-		onlineOnly: true
+		onlineOnly: false
 	},
 	defaultBatchMode: BATCH_OPTIONS.DAILY,
 	autoBatch: {
