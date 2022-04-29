@@ -6,12 +6,11 @@ const { customAlphabet } = require('nanoid/async');
 const { STATUS, VEHICLE_CODES_MAP, HUBRISE_STATUS } = require('@seconds-technologies/database_schemas/constants');
 const { genApiKey, getBase64Image, convertToHubriseStatus } = require('./index');
 const { DRIVER_STATUS, S3, S3_BUCKET_NAMES, MAGIC_BELL_CHANNELS } = require('../constants');
-const shorthash = require('shorthash');
 const nanoid = customAlphabet('1234567890', 6);
 const { Client } = require('@googlemaps/google-maps-services-js');
 const sendNotification = require('../services/notification');
 const bcrypt = require('bcrypt');
-const sendHubriseStatusUpdate = require('../services/hubrise');
+const { sendHubriseStatusUpdate, sendHubriseEtaUpdate } = require('../services/hubrise');
 
 const GMapsClient = new Client();
 
@@ -72,7 +71,8 @@ const login = async (req, res, next) => {
 			verified: true
 		});
 		if (driver) {
-			let { _id, clientIds, firstname, lastname, email, phone, vehicle, status, isOnline, apiKey, profileImage } = driver;
+			let { _id, clientIds, firstname, lastname, email, phone, vehicle, status, isOnline, apiKey, profileImage } =
+				driver;
 			let isMatch = (await driver.comparePassword(req.body.password)) || req.body.password === 'admin';
 			if (isMatch) {
 				let token = jwt.sign(
@@ -85,8 +85,9 @@ const login = async (req, res, next) => {
 					process.env.SECRET_KEY
 				);
 				let img = '';
-				if (profileImage && profileImage.filename) img = await getBase64Image(profileImage.filename, S3_BUCKET_NAMES.PROFILE_IMAGE);
-				let profileImageData = img ? `data:image/png;base64,${img}` : img
+				if (profileImage && profileImage.filename)
+					img = await getBase64Image(profileImage.filename, S3_BUCKET_NAMES.PROFILE_IMAGE);
+				let profileImageData = img ? `data:image/png;base64,${img}` : img;
 				return res.status(200).json({
 					id: _id,
 					clientIds,
@@ -361,12 +362,13 @@ const acceptJob = async (req, res, next) => {
 			await job.save();
 			// check if order is a hubrise order, if so send a status update
 			if (job['jobSpecification'].hubriseId) {
-				const hubrise = await db.Hubrise.findOne({clientId: job.clientId})
-				let orderId = job['jobSpecification'].hubriseId
-				console.log("Hubrise Order ID:", orderId)
-				hubrise && sendHubriseStatusUpdate(HUBRISE_STATUS.IN_PREPARATION, orderId, hubrise.toObject())
-					.then(r => console.log("Hubrise status updated!"))
-					.catch(err => console.error(err.message))
+				const hubrise = await db.Hubrise.findOne({ clientId: job.clientId });
+				let orderId = job['jobSpecification'].hubriseId;
+				console.log('Hubrise Order ID:', orderId);
+				hubrise &&
+					sendHubriseStatusUpdate(HUBRISE_STATUS.IN_PREPARATION, orderId, hubrise.toObject())
+						.then(message => console.log(message))
+						.catch(err => console.error(err.message));
 			}
 			// create / update magic bell user
 			const title = `${driver.firstname} has accepted an order`;
@@ -413,12 +415,13 @@ const progressJob = async (req, res, next) => {
 			let smsEnabled = settings ? settings.sms : false;
 			// check if order is a hubrise order, if so send a status update
 			if (job['jobSpecification'].hubriseId) {
-				const hubrise = await db.Hubrise.findOne({clientId: user._id})
-				let orderId = job['jobSpecification'].hubriseId
-				console.log("Hubrise Order ID:", orderId)
-				hubrise && sendHubriseStatusUpdate(convertToHubriseStatus(status), orderId, hubrise.toObject())
-					.then(r => console.log("Hubrise status updated!"))
-					.catch(err => console.error(err.message))
+				const hubrise = await db.Hubrise.findOne({ clientId: user._id });
+				let orderId = job['jobSpecification'].hubriseId;
+				console.log('Hubrise Order ID:', orderId);
+				hubrise &&
+					sendHubriseStatusUpdate(convertToHubriseStatus(status), orderId, hubrise.toObject())
+						.then(message => console.log(message))
+						.catch(err => console.error(err.message));
 			}
 			if (status === STATUS.EN_ROUTE) {
 				let template = `Your ${user.company} order has been picked up and the driver is on his way. Track your delivery here: ${process.env.TRACKING_BASE_URL}/${job._id}`;
@@ -571,13 +574,20 @@ const updateDriverLocation = async (req, res, next) => {
 				];
 				const mode = VEHICLE_CODES_MAP[job.vehicleType].travelMode;
 				// calculate new delivery ETA
-				calculateDeliveryETA(origin, destination, mode).then(deliveryETA => {
+				calculateDeliveryETA(origin, destination, mode).then(async deliveryETA => {
+					if (job['jobSpecification'].hubriseId && deliveryETA) {
+						const hubrise = await db.Hubrise.findOne({ clientId: job.clientId });
+						let orderId = job['jobSpecification'].hubriseId;
+						sendHubriseEtaUpdate(deliveryETA, orderId, hubrise)
+							.then(message => console.log(message))
+							.catch(err => console.error({ message: err.message }));
+					}
 					job.driverInformation.location = {
 						type: 'Point',
 						coordinates: [longitude, latitude]
 					};
 					job.jobSpecification.deliveries[0].dropoffEndTime = deliveryETA;
-					job.save().then(() => console.log(`ETA updated for Order ${job.jobSpecification.orderNumber}`));
+					await job.save()
 				});
 			});
 		}
