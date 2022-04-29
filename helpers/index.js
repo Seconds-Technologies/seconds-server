@@ -146,16 +146,17 @@ async function handleActiveSubscription(subscription) {
 				{ stripeCustomerId: customer },
 				{
 					subscriptionId: id,
-					'subscriptionItems.standardMonthly': standardMonthly.id,
-					'subscriptionItems.standardCommission': standardCommission.id,
-					'subscriptionItems.multiDropCommission': multiDropCommission.id,
-					'subscriptionItems.smsCommission': smsCommission.id
+					subscriptionPlan: standardMonthly ? standardMonthly.price.lookup_key : "",
+					'subscriptionItems.standardMonthly': standardMonthly ? standardMonthly.id : "",
+					'subscriptionItems.standardCommission': standardCommission ? standardCommission.id : "",
+					'subscriptionItems.multiDropCommission': multiDropCommission ? multiDropCommission.id : "",
+					'subscriptionItems.smsCommission': smsCommission ? smsCommission.id : "",
 				},
 				{ new: true }
 			);
 			if (user) {
 				console.log('------------------------------------');
-				console.log('updated user:', user);
+				console.log('updated user:', user.subscriptionId, user.subscriptionItems);
 				console.log('------------------------------------');
 				return 'Subscription is active';
 			} else {
