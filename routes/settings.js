@@ -70,7 +70,6 @@ router.post('/update-delivery-hours', async (req, res, next) => {
 router.patch('/update-providers', async (req, res, next) => {
 	try {
 		const { email } = req.query;
-		console.log(req.body);
 		const user = await db.User.findOne({ email });
 		if (user) {
 			// use the clientId to search for their settings
@@ -99,13 +98,13 @@ router.patch('/toggle-integration-status', async(req, res, next) => {
 		console.table({ platform, status })
 		const user = await db.User.findOne({ email })
 		if (user) {
-			console.table(user[platform])
 			switch (platform) {
 				case PLATFORMS.HUBRISE:
 					const hubrise = await db.Hubrise.findOneAndUpdate({ clientId: user['_id'] }, { active: status }, { new: true })
 					console.log(hubrise)
 					break;
 				default:
+					console.table(user[platform])
 					user[platform].active = status
 					await user.save()
 					break;
