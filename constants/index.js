@@ -60,3 +60,16 @@ exports.COMMISSION_KEYS = {
 	MULTI_DROP: 'multi-drop-commission',
 	SMS: 'sms-commission'
 }
+
+exports.PLATFORMS = {
+	SHOPIFY: 'shopify',
+	WOOCOMMERCE: 'woocommerce',
+	SQUARESPACE: 'squarespace',
+	SQUARE: 'square',
+	MAGENTO: 'magento',
+	FLIPDISH: 'flipdish',
+	HUBRISE: 'hubrise',
+	UBER_EATS: 'uber_eats',
+	DELIVEROO: 'deliveroo',
+	JUST_EAT: 'just_eat'
+}
