@@ -125,10 +125,20 @@ function getSubscriptionItems(data) {
 		const whitelist = process.env.STRIPE_STANDARD_MONTHLY_IDS.split(' ')
 		return whitelist.includes(price.id)
 	})
-	let standardCommission = data.find(({ id, price }) => {
-		const whitelist = process.env.STRIPE_STANDARD_COMMISSION_IDS.split(' ')
-		return whitelist.includes(price.id)
-	})
+	let standardCommission;
+	// use the standardMonthly price lookup_key, to search for the correct standard commission subscription item
+	if (standardMonthly) {
+		let lookupKey = standardMonthly.price.lookup_key
+		standardCommission = data.find(({ id, price }) => {
+			const whitelist = process.env.STRIPE_STANDARD_COMMISSION_IDS.split(' ')
+			return whitelist.includes(price.id) && price.lookup_key === lookupKey.concat("-commission")
+		})
+	} else {
+		standardCommission = data.find(({ id, price }) => {
+			const whitelist = process.env.STRIPE_STANDARD_COMMISSION_IDS.split(' ')
+			return whitelist.includes(price.id)
+		})
+	}
 	let multiDropCommission = data.find(({price}) => price.id === process.env.STRIPE_MULTIDROP_COMMISSION_PRICE )
 	let smsCommission = data.find(({price}) => price.id === process.env.STRIPE_SMS_COMMISSION_PRICE)
 	return { standardMonthly, standardCommission, multiDropCommission, smsCommission }
