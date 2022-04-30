@@ -26,6 +26,7 @@ function orderPriceIds(prices) {
 	items.push({ price: multiDropPrice.id });
 	amounts.push(planPrice.unit_amount);
 	products.push(multiDropPrice.product.id);
+	// add sms commission
 	const smsPrice = prices.find(price => price.id === process.env.STRIPE_SMS_COMMISSION_PRICE);
 	items.push({ price: smsPrice.id });
 	amounts.push(planPrice.unit_amount);
@@ -43,7 +44,6 @@ function flagSubscriptionItems(activeItems) {
 	console.log(deleted);
 	return deleted;
 }
-
 
 router.post('/setup-subscription', async (req, res, next) => {
 	try {
@@ -63,24 +63,26 @@ router.post('/setup-subscription', async (req, res, next) => {
 		console.log("Plan Item", planItem)
 		console.log("Commission Item", commissionItem)
 		// check if user has an existing subscription
-		if (user.subscriptionId) {
+		if (user['subscriptionId']) {
 			// if they do, update the subscription plan price and standard commission price
 			// first delete subscriptionItems for the main product that are no longer required i.e. starter, growth, etc
-			const flaggedItems = flagSubscriptionItems(user.subscriptionItems);
+			const flaggedItems = flagSubscriptionItems(user['subscriptionItems']);
 			// second check if the line_item for the new plan commission already exists in the current subscription
-			subscription = await stripe.subscriptions.retrieve(user.subscriptionId)
-			// const commissionPriceIds = process.env.STRIPE_STANDARD_COMMISSION_IDS.split(' ')
+			subscription = await stripe.subscriptions.retrieve(user['subscriptionId'])
 			const standard_commission = subscription.items.data.find(item => item.price.lookup_key === `${lookupKey}-commission`)
 			console.log(standard_commission)
 			if (standard_commission) {
-				subscription = await stripe.subscriptions.update(user.subscriptionId, {
+				subscription = await stripe.subscriptions.update(user['subscriptionId'], {
 					proration_behavior: 'create_prorations',
 					items: [planItem, ...flaggedItems]
 				});
 			} else {
-				subscription = await stripe.subscriptions.update(user.subscriptionId, {
+				subscription = await stripe.subscriptions.update(user['subscriptionId'], {
 					proration_behavior: 'create_prorations',
-					items: [planItem, commissionItem, ...flaggedItems]
+					items: [planItem, commissionItem, ...flaggedItems],
+					default_tax_rates: [
+
+					]
 				});
 			}
 		} else {
