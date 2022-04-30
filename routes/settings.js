@@ -3,6 +3,7 @@ const db = require('../models');
 const { BATCH_OPTIONS } = require('@seconds-technologies/database_schemas/constants');
 const router = express.Router();
 const { createDailyBatchScheduler, createIncrementalBatchScheduler } = require('../helpers/settings');
+const { PLATFORMS } = require('../constants');
 
 router.patch('/business-workflow', async (req, res, next) => {
 	try {
@@ -96,11 +97,19 @@ router.patch('/toggle-integration-status', async(req, res, next) => {
 		const { email } = req.query;
 		const { platform, status } = req.body;
 		console.table({ platform, status })
-		const user = await db.User.findOne({ email: email})
+		const user = await db.User.findOne({ email })
 		if (user) {
 			console.table(user[platform])
-			user[platform].active = status
-			await user.save()
+			switch (platform) {
+				case PLATFORMS.HUBRISE:
+					const hubrise = await db.Hubrise.findOneAndUpdate({ clientId: user['_id'] }, { active: status }, { new: true })
+					console.log(hubrise)
+					break;
+				default:
+					user[platform].active = status
+					await user.save()
+					break;
+			}
 			res.status(200).json({ message: "SUCCESS", platform, status })
 		} else {
 			return next({
