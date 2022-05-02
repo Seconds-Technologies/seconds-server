@@ -4,29 +4,33 @@ const { BATCH_OPTIONS } = require('@seconds-technologies/database_schemas/consta
 const router = express.Router();
 const { createDailyBatchScheduler, createIncrementalBatchScheduler } = require('../helpers/settings');
 const { PLATFORMS } = require('../constants');
+const { defaultSettings } = require('../models/schemas/defaultSettings');
 
 router.patch('/business-workflow', async (req, res, next) => {
 	try {
 		const { email } = req.query;
-		const user = await db.User.findOne({ email: email });
+		const user = await db.User.findOne({ email });
 		if (user) {
 			// use the clientId to search for their current settings
 			let prevSettings = await db.Settings.findOne({ clientId: user['_id'] });
 			// apply new changes to their settings
 			let settings = await db.Settings.findOneAndUpdate({ clientId: user['_id'] }, req.body, { new: true });
 			// if no previous settings were found, create new settings for the user
-			if (!prevSettings) settings = await db.Settings.create({ clientId: user['_id'], ...req.body });
+			if (!prevSettings) settings = await db.Settings.create({ clientId: user['_id'], ...defaultSettings, ...req.body });
 			console.log('-----------------------------------------------');
 			// if register the [ DAILY | INCREMENTAL ] batching scheduler using the specified time configurations
 			// define cases for creating the daily batch scheduler
-			const caseDaily = req.body.defaultBatchMode === BATCH_OPTIONS.DAILY
-			const caseHourly = req.body.defaultBatchMode === BATCH_OPTIONS.INCREMENTAL
-			//if either of the cases are true, create the daily batch scheduler
-			if (caseDaily) {
-				await createDailyBatchScheduler(req.body.autoBatch.enabled, user.toObject(), settings.toObject());
-			} else if (caseHourly) {
-				await createIncrementalBatchScheduler(req.body.autoBatch.enabled, user.toObject(), settings.toObject());
+			if (req.body.defaultBatchMode) {
+				const caseDaily = req.body.defaultBatchMode === BATCH_OPTIONS.DAILY
+				const caseHourly = req.body.defaultBatchMode === BATCH_OPTIONS.INCREMENTAL
+				//if either of the cases are true, create the daily batch scheduler
+				if (caseDaily) {
+					await createDailyBatchScheduler(req.body.autoBatch.enabled, user.toObject(), settings.toObject());
+				} else if (caseHourly) {
+					await createIncrementalBatchScheduler(req.body.autoBatch.enabled, user.toObject(), settings.toObject());
+				}
 			}
+			console.log(settings.toObject());
 			res.status(200).json({ message: 'Settings updated successfully', ...settings.toObject() });
 		} else {
 			return next({
@@ -49,6 +53,17 @@ router.post('/update-delivery-hours', async (req, res, next) => {
 		console.table(req.body);
 		const user = await db.User.findOneAndUpdate({ email }, { deliveryHours: req.body }, { new: true });
 		if (user) {
+			const settings = await db.Settings.findOne({clientId: user['_id']})
+			if (settings) {
+				const caseDaily = settings['defaultBatchMode'] === BATCH_OPTIONS.DAILY
+				const caseHourly = settings['defaultBatchMode'] === BATCH_OPTIONS.INCREMENTAL
+				//if either of the cases are true, create the daily batch scheduler
+				if (caseDaily) {
+					await createDailyBatchScheduler(settings['autoBatch'].enabled, user.toObject(), settings.toObject());
+				} else if (caseHourly) {
+					await createIncrementalBatchScheduler(settings['autoBatch'].enabled, user.toObject(), settings.toObject());
+				}
+			}
 			console.log('Updated delivery hours');
 			return res.status(200).json({
 				updatedHours: user['deliveryHours'],
@@ -67,7 +82,7 @@ router.post('/update-delivery-hours', async (req, res, next) => {
 	}
 });
 
-router.patch('/update-providers', async (req, res, next) => {
+router.patch('/toggle-provider-status', async (req, res, next) => {
 	try {
 		const { email } = req.query;
 		const user = await db.User.findOne({ email });
