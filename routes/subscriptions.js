@@ -54,7 +54,7 @@ router.post('/setup-subscription', async (req, res, next) => {
 		// use the subscription plan lookup key to determine if subscription interval is weekly or monthly
 		const newInterval = lookupKey === process.env.STRIPE_SUBSCRIPTION_PLANS.split(' ')[0] ? BILLING_INTERVALS.WEEKLY : BILLING_INTERVALS.MONTHLY
 		console.log('-----------------------------------------------');
-		console.log(newInterval)
+		console.log("NEW INTERVAL:", newInterval)
 		console.log('-----------------------------------------------');
 		let subscription;
 		let prices = (
@@ -67,19 +67,15 @@ router.post('/setup-subscription', async (req, res, next) => {
 		let { items, products, amounts } = orderPriceIds(prices);
 		const planItem = items[0]
 		const commissionItem = items[1]
-		console.log("Plan Item", planItem)
-		console.log("Commission Item", commissionItem)
 		// check if user has an existing subscription
 		if (user['subscriptionId']) {
 			// retrieve the current subscription
 			subscription = await stripe.subscriptions.retrieve(user['subscriptionId'])
 			// first delete subscriptionItems for the main product that are no longer required i.e. connect, growth, etc
 			const flaggedItems = flagSubscriptionItems(user['subscriptionItems']);
-			// // use "current period START and END timestamps to determine the billing interval
-			// const billingInterval = moment.unix(subscription.current_period_end).diff(moment.unix(subscription.current_period_start), "day")
 			// fetch the current plan interval
 			const planInterval = subscription.items.data[0].plan.interval
-			console.log("CURRENT INTERVAL", planInterval)
+			console.log("CURRENT INTERVAL:", planInterval)
 			// check if the billing period for the new plan is different to the existing plan
 			if (planInterval === newInterval) {
 				// if they do, update the subscription plan price and standard commission price
@@ -94,16 +90,13 @@ router.post('/setup-subscription', async (req, res, next) => {
 				} else {
 					subscription = await stripe.subscriptions.update(user['subscriptionId'], {
 						proration_behavior: 'create_prorations',
-						items: [planItem, commissionItem, ...flaggedItems],
-						default_tax_rates: []
+						items: [planItem, commissionItem, ...flaggedItems]
 					});
 				}
 			} else {
 				// if they are different, then:
-				// delete previous subscription
-				// charge prorations
-				// create new subscription
-				const deleted = await stripe.subscriptions.del(user['subscriptionId'], {
+				// delete previous subscription, charge prorations, create new subscription
+				await stripe.subscriptions.del(user['subscriptionId'], {
 					invoice_now: true,
 					prorate: true
 				})
@@ -112,7 +105,12 @@ router.post('/setup-subscription', async (req, res, next) => {
 					customer: stripeCustomerId,
 					items,
 					default_payment_method: paymentMethodId,
+					default_tax_rates: [
+						String(process.env.STRIPE_TAX_EXCLUSIVE)
+					]
 				});
+				user.freeTrialUsed = true
+				await user.save()
 			}
 		} else {
 			// otherwise create a new subscription
@@ -121,8 +119,13 @@ router.post('/setup-subscription', async (req, res, next) => {
 				items,
 				default_payment_method: paymentMethodId,
 				//TODO - add validation if user has already used their free trial
-				trial_period_days: Number(process.env.STRIPE_TRIAL_PERIOD_DAYS)
+				...(!user['freeTrialUsed'] && { trial_period_days: Number(process.env.STRIPE_TRIAL_PERIOD_DAYS)}),
+				default_tax_rates: [
+					String(process.env.STRIPE_TAX_EXCLUSIVE)
+				]
 			});
+			user.freeTrialUsed = true
+			await user.save()
 		}
 		console.log('SUBSCRIPTION:', subscription);
 		// attach the subscription id to the user
