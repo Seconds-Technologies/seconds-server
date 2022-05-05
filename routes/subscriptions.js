@@ -4,7 +4,7 @@ const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const db = require('../models');
 const moment = require('moment');
 const sendEmail = require('../services/email');
-const { BILLING_INTERVALS } = require('../constants');
+const { BILLING_INTERVALS, COMMISSION_KEYS } = require('../constants');
 const router = express.Router();
 
 function orderPriceIds(prices) {
@@ -59,7 +59,7 @@ router.post('/setup-subscription', async (req, res, next) => {
 		let subscription;
 		let prices = (
 			await stripe.prices.list({
-				lookup_keys: [lookupKey, `${lookupKey}-commission`, `multi-drop-commission-${newInterval}`, `sms-commission-${newInterval}`],
+				lookup_keys: [lookupKey, `${lookupKey}-commission`, `${COMMISSION_KEYS.MULTI_DROP}-${newInterval}`, `${COMMISSION_KEYS.SMS}-${newInterval}`],
 				expand: ['data.product']
 			})
 		).data;
