@@ -1,9 +1,8 @@
 const express = require('express');
 const db = require('../models');
-const { BATCH_OPTIONS } = require('@seconds-technologies/database_schemas/constants');
+const { BATCH_OPTIONS, PLATFORMS } = require('@seconds-technologies/database_schemas/constants');
 const router = express.Router();
 const { createDailyBatchScheduler, createIncrementalBatchScheduler } = require('../helpers/settings');
-const { PLATFORMS } = require('../constants');
 const { defaultSettings } = require('../models/schemas/defaultSettings');
 
 router.patch('/business-workflow', async (req, res, next) => {

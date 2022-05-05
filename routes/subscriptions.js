@@ -4,6 +4,7 @@ const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const db = require('../models');
 const moment = require('moment');
 const sendEmail = require('../services/email');
+const { BILLING_INTERVALS } = require('../constants');
 const router = express.Router();
 
 function orderPriceIds(prices) {
@@ -22,12 +23,12 @@ function orderPriceIds(prices) {
 	amounts.push(planPrice.unit_amount);
 	products.push(commissionPrice.product.id);
 	// add multi-drop commission
-	const multiDropPrice = prices.find(price => price.id === process.env.STRIPE_MULTIDROP_COMMISSION_PRICE);
+	const multiDropPrice = prices.find(price => process.env.STRIPE_MULTIDROP_COMMISSION_PRICES.includes(price.id));
 	items.push({ price: multiDropPrice.id });
 	amounts.push(planPrice.unit_amount);
 	products.push(multiDropPrice.product.id);
 	// add sms commission
-	const smsPrice = prices.find(price => price.id === process.env.STRIPE_SMS_COMMISSION_PRICE);
+	const smsPrice = prices.find(price => process.env.STRIPE_SMS_COMMISSION_PRICES.includes(price.id));
 	items.push({ price: smsPrice.id });
 	amounts.push(planPrice.unit_amount);
 	products.push(smsPrice.product.id);
@@ -50,13 +51,19 @@ router.post('/setup-subscription', async (req, res, next) => {
 		const { email } = req.query;
 		const { stripeCustomerId, paymentMethodId, lookupKey } = req.body;
 		const user = await db.User.findOne({ email });
+		// use the subscription plan lookup key to determine if subscription interval is weekly or monthly
+		const newInterval = lookupKey === process.env.STRIPE_SUBSCRIPTION_PLANS.split(' ')[0] ? BILLING_INTERVALS.WEEKLY : BILLING_INTERVALS.MONTHLY
+		console.log('-----------------------------------------------');
+		console.log(newInterval)
+		console.log('-----------------------------------------------');
 		let subscription;
 		let prices = (
 			await stripe.prices.list({
-				lookup_keys: [lookupKey, `${lookupKey}-commission`, 'multi-drop-commission', 'sms-commission'],
+				lookup_keys: [lookupKey, `${lookupKey}-commission`, `multi-drop-commission-${newInterval}`, `sms-commission-${newInterval}`],
 				expand: ['data.product']
 			})
 		).data;
+		prices.forEach(price => console.log(price.id))
 		let { items, products, amounts } = orderPriceIds(prices);
 		const planItem = items[0]
 		const commissionItem = items[1]
@@ -64,25 +71,47 @@ router.post('/setup-subscription', async (req, res, next) => {
 		console.log("Commission Item", commissionItem)
 		// check if user has an existing subscription
 		if (user['subscriptionId']) {
-			// if they do, update the subscription plan price and standard commission price
-			// first delete subscriptionItems for the main product that are no longer required i.e. starter, growth, etc
-			const flaggedItems = flagSubscriptionItems(user['subscriptionItems']);
-			// second check if the line_item for the new plan commission already exists in the current subscription
+			// retrieve the current subscription
 			subscription = await stripe.subscriptions.retrieve(user['subscriptionId'])
-			const standard_commission = subscription.items.data.find(item => item.price.lookup_key === `${lookupKey}-commission`)
-			console.log(standard_commission)
-			if (standard_commission) {
-				subscription = await stripe.subscriptions.update(user['subscriptionId'], {
-					proration_behavior: 'create_prorations',
-					items: [planItem, ...flaggedItems]
-				});
+			// first delete subscriptionItems for the main product that are no longer required i.e. connect, growth, etc
+			const flaggedItems = flagSubscriptionItems(user['subscriptionItems']);
+			// // use "current period START and END timestamps to determine the billing interval
+			// const billingInterval = moment.unix(subscription.current_period_end).diff(moment.unix(subscription.current_period_start), "day")
+			// fetch the current plan interval
+			const planInterval = subscription.items.data[0].plan.interval
+			console.log("CURRENT INTERVAL", planInterval)
+			// check if the billing period for the new plan is different to the existing plan
+			if (planInterval === newInterval) {
+				// if they do, update the subscription plan price and standard commission price
+				// second check if the line_item for the new plan commission already exists in the current subscription
+				const standard_commission = subscription.items.data.find(item => item.price.lookup_key === `${lookupKey}-commission`)
+				console.log(standard_commission)
+				if (standard_commission) {
+					subscription = await stripe.subscriptions.update(user['subscriptionId'], {
+						proration_behavior: 'create_prorations',
+						items: [planItem, ...flaggedItems]
+					});
+				} else {
+					subscription = await stripe.subscriptions.update(user['subscriptionId'], {
+						proration_behavior: 'create_prorations',
+						items: [planItem, commissionItem, ...flaggedItems],
+						default_tax_rates: []
+					});
+				}
 			} else {
-				subscription = await stripe.subscriptions.update(user['subscriptionId'], {
-					proration_behavior: 'create_prorations',
-					items: [planItem, commissionItem, ...flaggedItems],
-					default_tax_rates: [
-
-					]
+				// if they are different, then:
+				// delete previous subscription
+				// charge prorations
+				// create new subscription
+				const deleted = await stripe.subscriptions.del(user['subscriptionId'], {
+					invoice_now: true,
+					prorate: true
+				})
+				// otherwise create a new subscription
+				subscription = await stripe.subscriptions.create({
+					customer: stripeCustomerId,
+					items,
+					default_payment_method: paymentMethodId,
 				});
 			}
 		} else {
@@ -97,7 +126,7 @@ router.post('/setup-subscription', async (req, res, next) => {
 		}
 		console.log('SUBSCRIPTION:', subscription);
 		// attach the subscription id to the user
-		const updatedUser = await db.User.findOneAndUpdate(
+		await db.User.findOneAndUpdate(
 			{ email },
 			{ subscriptionId: subscription.id, subscriptionPlan: lookupKey },
 			{ new: true }

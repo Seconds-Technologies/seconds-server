@@ -139,8 +139,14 @@ function getSubscriptionItems(data) {
 			return whitelist.includes(price.id)
 		})
 	}
-	let multiDropCommission = data.find(({price}) => price.id === process.env.STRIPE_MULTIDROP_COMMISSION_PRICE )
-	let smsCommission = data.find(({price}) => price.id === process.env.STRIPE_SMS_COMMISSION_PRICE)
+	let multiDropCommission = data.find(({price}) => {
+		const whitelist = process.env.STRIPE_MULTIDROP_COMMISSION_PRICES.split(' ')
+		return whitelist.includes(price.id)
+	})
+	let smsCommission = data.find(({price}) => {
+		const whitelist = process.env.STRIPE_SMS_COMMISSION_PRICES.split(' ')
+		return whitelist.includes(price.id)
+	})
 	return { standardMonthly, standardCommission, multiDropCommission, smsCommission }
 }
 
@@ -166,7 +172,7 @@ async function handleActiveSubscription(subscription) {
 			);
 			if (user) {
 				console.log('------------------------------------');
-				console.log('updated user:', user.subscriptionId, user.subscriptionItems);
+				console.log('updated user:', user['subscriptionId'], user['subscriptionItems']);
 				console.log('------------------------------------');
 				return 'Subscription is active';
 			} else {
