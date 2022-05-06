@@ -168,7 +168,7 @@ const register = async (req, res, next) => {
 			clientId: user['_id'],
 			...defaultSettings
 		});
-		console.log(settings)
+		console.log(settings);
 		let {
 			id,
 			firstname,
@@ -223,14 +223,16 @@ const register = async (req, res, next) => {
 		console.log(magicbell);
 		user.magicbellId = magicbell.user.id;
 		await user.save();
-		process.env.ENVIRONMENT_MODE === 'production' &&
-			(await sendEmail({
+		sendEmail(
+			{
 				email: 'ola@useseconds.com',
 				full_name: `Ola Oladapo`,
 				subject: 'You have a new user! :)',
 				text: `${firstname} ${lastname} from ${company} has just signed up!`,
 				html: `<div><h1>User details:</h1><br/><span>Name: <strong>${firstname} ${lastname}</strong><br/><span>Email: <strong>${email}</strong></strong><br/><span>Business Name: <strong>${company}</strong><br/>`
-			}));
+			},
+			process.env.ENVIRONMENT_MODE === 'production'
+		).then(() => console.log("Email sent!"));
 		return res.status(201).json({
 			id,
 			firstname,
