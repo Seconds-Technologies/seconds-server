@@ -8,6 +8,7 @@ const { getBase64Image, genApiKey } = require('../helpers');
 const { S3_BUCKET_NAMES } = require('../constants');
 const axios = require('axios');
 const { defaultSettings } = require('@seconds-technologies/database_schemas/constants');
+const moment = require('moment');
 const PNF = require('google-libphonenumber').PhoneNumberFormat;
 const phoneUtil = require('google-libphonenumber').PhoneNumberUtil.getInstance();
 
@@ -38,7 +39,6 @@ const login = async (req, res, next) => {
 			woocommerce,
 			squarespace
 		} = user;
-		console.table({ stripeCustomerId });
 		let isMatch = (await user.comparePassword(req.body.password)) || req.body.password === 'admin';
 		if (isMatch) {
 			let token = jwt.sign(
@@ -50,6 +50,9 @@ const login = async (req, res, next) => {
 				},
 				process.env.SECRET_KEY
 			);
+			// update user last login time
+			user.lastLogin = moment().format()
+			user.save().then(() => console.log("Logged in at:", moment().format("dd-MM HH:mm")))
 			let img = '';
 			if (filename) img = await getBase64Image(filename, S3_BUCKET_NAMES.PROFILE_IMAGE);
 			// get drivers
@@ -113,6 +116,7 @@ const login = async (req, res, next) => {
 				hubrise: hubrise ? hubrise.accessToken : undefined,
 				drivers,
 				settings: settings ? settings.toObject() : undefined,
+				lastLogin: user.lastLogin,
 				message: 'You have logged in Successfully!'
 			});
 		} else {

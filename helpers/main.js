@@ -44,7 +44,7 @@ const updateProfile = async (req, res, next) => {
 	try {
 		const { id, data } = req.body;
 		// update user info in database
-		const { firstname, lastname, email, company, stripeCustomerId, phone, fullAddress, magicbellId } =
+		const { firstname, lastname, email, company, stripeCustomerId, phone, fullAddress, address, magicbellId } =
 			await db.User.findByIdAndUpdate(id, { ...data }, { new: true });
 		console.log('Stripe Customer', stripeCustomerId);
 		// update stripe info
@@ -87,6 +87,7 @@ const updateProfile = async (req, res, next) => {
 			company,
 			phone,
 			fullAddress,
+			address,
 			message: 'Profile updated successfully!'
 		});
 	} catch (err) {
