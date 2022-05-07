@@ -188,7 +188,8 @@ const synchronizeUserInfo = async (req, res, next) => {
 				paymentMethodId,
 				stripeCustomerId,
 				subscriptionId,
-				subscriptionPlan
+				subscriptionPlan,
+				lastLogin
 			} = user;
 			// lookup integrated drivers
 			let drivers = await db.Driver.find({ clientIds: _id });
@@ -196,6 +197,7 @@ const synchronizeUserInfo = async (req, res, next) => {
 			const settings = await db.Settings.findOne({ clientId: _id });
 			res.status(200).json({
 				id: _id,
+				lastLogin,
 				firstname,
 				lastname,
 				email,
