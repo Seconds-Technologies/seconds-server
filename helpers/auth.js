@@ -7,7 +7,7 @@ const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const { getBase64Image, genApiKey } = require('../helpers');
 const { S3_BUCKET_NAMES } = require('../constants');
 const axios = require('axios');
-const { defaultSettings } = require('@seconds-technologies/database_schemas/constants')
+const { defaultSettings } = require('@seconds-technologies/database_schemas/constants');
 const PNF = require('google-libphonenumber').PhoneNumberFormat;
 const phoneUtil = require('google-libphonenumber').PhoneNumberUtil.getInstance();
 
@@ -219,10 +219,11 @@ const register = async (req, res, next) => {
 				}
 			}
 		};
-		const magicbell = (await axios.post(`${process.env.MAGIC_BELL_HOST}/users`, payload, config)).data;
-		console.log(magicbell);
-		user.magicbellId = magicbell.user.id;
-		await user.save();
+		axios.post(`${process.env.MAGIC_BELL_HOST}/users`, payload, config).then(({ data }) => {
+			console.log(data);
+			user.magicbellId = data.user.id;
+			user.save();
+		});
 		sendEmail(
 			{
 				email: 'ola@useseconds.com',
@@ -232,7 +233,7 @@ const register = async (req, res, next) => {
 				html: `<div><h1>User details:</h1><br/><span>Name: <strong>${firstname} ${lastname}</strong><br/><span>Email: <strong>${email}</strong></strong><br/><span>Business Name: <strong>${company}</strong><br/>`
 			},
 			process.env.ENVIRONMENT_MODE === 'production'
-		).then(() => console.log("Email sent!"));
+		).then(() => console.log('Email sent!'));
 		return res.status(201).json({
 			id,
 			firstname,
