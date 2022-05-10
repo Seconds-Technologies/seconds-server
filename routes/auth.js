@@ -8,7 +8,7 @@ const {
 	newStripeCustomer,
 	validateCredentials,
 	resetPassword
-} = require("../helpers/auth")
+} = require("../controllers/auth")
 
 router.post("/register", register);
 router.post("/login", login);

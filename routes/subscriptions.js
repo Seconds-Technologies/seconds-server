@@ -5,6 +5,7 @@ const db = require('../models');
 const moment = require('moment');
 const sendEmail = require('../services/email');
 const { BILLING_INTERVALS, COMMISSION_KEYS } = require('../constants');
+const { COMMISSION } = require('@seconds-technologies/database_schemas/constants');
 const router = express.Router();
 
 function orderPriceIds(prices) {
@@ -53,9 +54,6 @@ router.post('/setup-subscription', async (req, res, next) => {
 		const user = await db.User.findOne({ email });
 		// use the subscription plan lookup key to determine if subscription interval is weekly or monthly
 		const newInterval = lookupKey === process.env.STRIPE_SUBSCRIPTION_PLANS.split(' ')[0] ? BILLING_INTERVALS.WEEKLY : BILLING_INTERVALS.MONTHLY
-		console.log('-----------------------------------------------');
-		console.log("NEW INTERVAL:", newInterval)
-		console.log('-----------------------------------------------');
 		let subscription;
 		let prices = (
 			await stripe.prices.list({
@@ -81,7 +79,6 @@ router.post('/setup-subscription', async (req, res, next) => {
 				// if they do, update the subscription plan price and standard commission price
 				// second check if the line_item for the new plan commission already exists in the current subscription
 				const standard_commission = subscription.items.data.find(item => item.price.lookup_key === `${lookupKey}-commission`)
-				console.log(standard_commission)
 				if (standard_commission) {
 					subscription = await stripe.subscriptions.update(user['subscriptionId'], {
 						proration_behavior: 'create_prorations',
@@ -105,12 +102,15 @@ router.post('/setup-subscription', async (req, res, next) => {
 					customer: stripeCustomerId,
 					items,
 					default_payment_method: paymentMethodId,
+					...(!user['freeTrialUsed'] && { trial_period_days: Number(process.env.STRIPE_TRIAL_PERIOD_DAYS)}),
 					default_tax_rates: [
 						String(process.env.STRIPE_TAX_EXCLUSIVE)
 					]
 				});
-				user.freeTrialUsed = true
-				await user.save()
+				if (!user.freeTrialUsed) {
+					user.freeTrialUsed = lookupKey !== COMMISSION.CONNECT.name
+					await user.save()
+				}
 			}
 		} else {
 			// otherwise create a new subscription
@@ -124,7 +124,7 @@ router.post('/setup-subscription', async (req, res, next) => {
 					String(process.env.STRIPE_TAX_EXCLUSIVE)
 				]
 			});
-			user.freeTrialUsed = true
+			user.freeTrialUsed = lookupKey !== COMMISSION.CONNECT.name
 			await user.save()
 		}
 		console.log('SUBSCRIPTION:', subscription);
