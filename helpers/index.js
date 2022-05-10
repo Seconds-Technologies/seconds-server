@@ -122,7 +122,7 @@ function updateStock(product, quantity) {
 
 function getSubscriptionItems(data) {
 	let standardMonthly = data.find(({ id, price }) => {
-		const whitelist = process.env.STRIPE_STANDARD_MONTHLY_IDS.split(' ')
+		const whitelist = String(process.env.STRIPE_STANDARD_MONTHLY_PRICES).split(' ')
 		return whitelist.includes(price.id)
 	})
 	let standardCommission;
@@ -130,21 +130,21 @@ function getSubscriptionItems(data) {
 	if (standardMonthly) {
 		let lookupKey = standardMonthly.price.lookup_key
 		standardCommission = data.find(({ id, price }) => {
-			const whitelist = process.env.STRIPE_STANDARD_COMMISSION_IDS.split(' ')
+			const whitelist = String(process.env.STRIPE_STANDARD_COMMISSION_PRICES).split(' ')
 			return whitelist.includes(price.id) && price.lookup_key === lookupKey.concat("-commission")
 		})
 	} else {
 		standardCommission = data.find(({ id, price }) => {
-			const whitelist = process.env.STRIPE_STANDARD_COMMISSION_IDS.split(' ')
+			const whitelist = String(process.env.STRIPE_STANDARD_COMMISSION_PRICES).split(' ')
 			return whitelist.includes(price.id)
 		})
 	}
 	let multiDropCommission = data.find(({price}) => {
-		const whitelist = process.env.STRIPE_MULTIDROP_COMMISSION_PRICES.split(' ')
+		const whitelist = String(process.env.STRIPE_MULTIDROP_COMMISSION_PRICES).split(' ')
 		return whitelist.includes(price.id)
 	})
 	let smsCommission = data.find(({price}) => {
-		const whitelist = process.env.STRIPE_SMS_COMMISSION_PRICES.split(' ')
+		const whitelist = String(process.env.STRIPE_SMS_COMMISSION_PRICES).split(' ')
 		return whitelist.includes(price.id)
 	})
 	return { standardMonthly, standardCommission, multiDropCommission, smsCommission }

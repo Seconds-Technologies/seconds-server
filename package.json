@@ -17,6 +17,7 @@
     "@magicbell/core": "^5.0.3",
     "@seconds-technologies/database_schemas": "^1.5.6",
     "@sendgrid/mail": "^7.6.0",
+    "@usekana/admin-kana-js": "^0.1.18",
     "aws-sdk": "^2.1009.0",
     "axios": "^0.21.4",
     "bcrypt": "^5.0.1",
