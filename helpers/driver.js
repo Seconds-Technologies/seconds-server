@@ -370,7 +370,7 @@ const acceptJob = async (req, res, next) => {
 						.then(message => console.log(message))
 						.catch(err => console.error(err.message));
 			}
-			// create / update magic bell user
+			// send notification to client
 			const title = `${driver.firstname} has accepted an order`;
 			const content = `Order ${job.jobSpecification.orderNumber} has been accepted by your driver. The order will be picked up shortly.`;
 			sendNotification(job.clientId, title, content, MAGIC_BELL_CHANNELS.JOB_ACCEPTED).then(() =>
@@ -399,12 +399,10 @@ const progressJob = async (req, res, next) => {
 		let update = {
 			$set: { status },
 			$push: {
-				trackingHistory: [
-					{
-						timestamp: moment().unix(),
-						status
-					}
-				]
+				trackingHistory: {
+					timestamp: moment().unix(),
+					status
+				}
 			}
 		};
 		const job = await db.Job.findByIdAndUpdate(jobId, update, { new: true });
@@ -587,7 +585,7 @@ const updateDriverLocation = async (req, res, next) => {
 						coordinates: [longitude, latitude]
 					};
 					job.jobSpecification.deliveries[0].dropoffEndTime = deliveryETA;
-					await job.save()
+					await job.save();
 				});
 			});
 		}
