@@ -192,7 +192,7 @@ router.get('/cancel-subscription', async (req, res, next) => {
 		const user = await db.User.findOne({ email: email });
 		console.log('User', user);
 		if (user) {
-			const subscription = await stripe.subscriptions.update(user.subscriptionId, { cancel_at_period_end: true });
+			const subscription = await stripe.subscriptions.update(user['subscriptionId'], { cancel_at_period_end: true });
 			console.log(subscription);
 			// send email to admins about the cancellation
 			const message = `${user.firstname} ${user.lastname} has cancelled their subscription\n\nReason: ${reason}`;

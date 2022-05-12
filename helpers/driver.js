@@ -409,11 +409,11 @@ const progressJob = async (req, res, next) => {
 		// check the driver's job status if it needs to be changed
 		if (job) {
 			const user = await db.User.findById(job.clientId);
-			const settings = await db.Settings.findOne({ clientId: job.clientId });
+			const settings = await db.Settings.findOne({ clientId: job['clientId'] });
 			let smsEnabled = settings ? settings.sms : false;
 			// check if order is a hubrise order, if so send a status update
 			if (job['jobSpecification'].hubriseId) {
-				const hubrise = await db.Hubrise.findOne({ clientId: user._id });
+				const hubrise = await db.Hubrise.findOne({ clientId: user['_id'] });
 				let orderId = job['jobSpecification'].hubriseId;
 				console.log('Hubrise Order ID:', orderId);
 				hubrise &&
