@@ -240,7 +240,6 @@ const register = async (req, res, next) => {
 			paymentMethodId,
 			subscriptionId,
 			subscriptionPlan,
-			kanaAccessToken,
 			message: 'New user registered successfully!'
 		});
 	} catch (err) {
