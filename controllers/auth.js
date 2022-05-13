@@ -205,9 +205,12 @@ const register = async (req, res, next) => {
 			})
 			.catch(err => console.error(err));
 		// create a kana user and store user's accessToken to db
-		const { token: kanaAccessToken } = await newKanaUser(id, email, firstname, lastname, customer.id)
-		user.kanaAccessToken = kanaAccessToken
-		user.save()
+		newKanaUser(id, email, firstname, lastname, customer.id)
+			.then(({ token }) => {
+				user.kanaAccessToken = token;
+				user.save();
+			})
+			.catch(err => console.error(err));
 		sendEmail(
 			{
 				email: 'ola@useseconds.com',
