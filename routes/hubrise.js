@@ -15,8 +15,8 @@ router.get('/', async (req, res, next) => {
 			const catalog = await db.Catalog.findOne({ clientId: user['_id'] });
 			if (hubrise) {
 				let { accessToken, options, ...credentials } = hubrise.toObject();
-				const payload = { credentials, options, catalog }
-				console.log(payload)
+				const payload = { credentials, options, catalog };
+				console.log(payload);
 				res.status(200).json(payload);
 			} else {
 				throw new Error('This user has no hubrise account integrated');
@@ -79,12 +79,14 @@ router.get('/connect', async (req, res, next) => {
 		console.table(result);
 		const hubriseUser = await db.Hubrise.create({
 			active: true,
-			clientId: user._id,
+			clientId: user['_id'],
 			accessToken: result.access_token,
 			accountName: result.account_name,
 			accountId: result.account_id,
 			locationName: result.location_name,
-			locationId: result.location_id
+			locationId: result.location_id,
+			catalogId: result.catalog_id,
+			catalogName: result.catalog_name
 		});
 		// create webhook subscription
 		URL = `${process.env.HUBRISE_API_BASE_URL}/callback`;
@@ -139,27 +141,27 @@ router.patch('/disconnect', async (req, res, next) => {
 						'X-Access-Token': hubrise['accessToken']
 					}
 				};
-				// delete catalogs from the db belonging to the user
-				await db.Catalog.deleteMany({ clientId: user['_id'] });
-				// delete hubrise user from the db
-				await db.Hubrise.findOneAndDelete({ clientId: user['_id'] });
 				const URL = `${process.env.HUBRISE_API_BASE_URL}/callback`;
 				const result = (await axios.delete(URL, config)).data;
 				console.log('-----------------------------------------------');
 				console.log(result);
 				console.log('-----------------------------------------------');
+				// delete catalogs from the db belonging to the user
+				await db.Catalog.deleteMany({ clientId: user['_id'] });
+				// delete hubrise user from the db
+				await db.Hubrise.findOneAndDelete({ clientId: user['_id'] });
 				res.status(200).json({ message: 'Hubrise account has been disconnected' });
 			} else {
 				return next({
 					status: 404,
 					message: `User has no hubrise account integrated`
-				})
+				});
 			}
 		} else {
 			return next({
 				status: 404,
-				message:`User with email ${email} could not be found`
-			})
+				message: `User with email ${email} could not be found`
+			});
 		}
 	} catch (err) {
 		if (err.response && err.response.data) {
@@ -182,32 +184,32 @@ router.patch('/disconnect', async (req, res, next) => {
 
 router.patch('/update-hubrise', async (req, res, next) => {
 	try {
-	    const { email } = req.query;
-		console.table(req.body)
-		const user = await db.User.findOne({ email})
+		const { email } = req.query;
+		console.table(req.body);
+		const user = await db.User.findOne({ email });
 		if (user) {
-			const hubrise = await db.Hubrise.findOne({clientId: user['_id']})
+			const hubrise = await db.Hubrise.findOne({ clientId: user['_id'] });
 			if (hubrise) {
-				hubrise.options = req.body
-				await hubrise.save()
-				res.status(200).json({message: 'Hubrise updated successfully' })
+				hubrise.options = req.body;
+				await hubrise.save();
+				res.status(200).json({ message: 'Hubrise updated successfully' });
 			} else {
 				return next({
 					status: 404,
 					message: `User has no hubrise account integrated`
-				})
+				});
 			}
 		} else {
 			return next({
 				status: 404,
-				message:`User with email ${email} could not be found`
-			})
+				message: `User with email ${email} could not be found`
+			});
 		}
 	} catch (err) {
 		console.error('ERROR', err);
 		res.status(500).json({ message: err.message });
 	}
-})
+});
 
 router.get('/pull-catalog', async (req, res, next) => {
 	try {
@@ -217,97 +219,86 @@ router.get('/pull-catalog', async (req, res, next) => {
 		let CATALOG;
 		let CATALOG_ID;
 		let CATALOG_NAME;
-		const HUBRISE_CATALOGS = [];
 		if (user) {
 			const hubrise = await db.Hubrise.findOne({ clientId: user['_id'] });
 			if (hubrise) {
-				let { locationId, accessToken } = hubrise;
-				const locationEndpoint = `/locations/${locationId}/catalogs`;
-				const locationURL = process.env.HUBRISE_API_BASE_URL + locationEndpoint;
-				console.table({ locationURL });
+				let { locationId, catalogId, accessToken } = hubrise.toObject();
+				const catalogEndpoint = `catalogs/${catalogId}`;
+				const catalogURL = process.env.HUBRISE_API_BASE_URL + catalogEndpoint;
+				console.table({ catalogURL });
 				const config = {
 					headers: {
 						'X-Access-Token': accessToken
 					}
 				};
-				// fetch catalogs under the connected hubrise location
-				let catalogs = (await axios.get(locationURL, config)).data;
-				console.log('LOCATION:', catalogs);
-				console.log('-----------------------------------------');
-				// check if there are any catalogs listed, if there are find the with matching location ID and retrieve it
-				// if not skip and search for account level catalogs
-				if (catalogs.length) {
-					let catalogRef = catalogs.find(({ location_id }) => location_id === locationId);
-					let URL = process.env.HUBRISE_API_BASE_URL + `/catalogs/${catalogRef.id}`;
-					const catalog = (await axios.get(URL, config)).data;
-					console.log(catalog);
-					HUBRISE_CATALOGS.push(catalog);
-				}
-				// push catalogs into the database
-				await Promise.all(
-					HUBRISE_CATALOGS.map(async ({ id, name, data, location_id }) => {
-						let categories = data.categories.map(({ id, name, ref, description, parent_ref, tags }) => ({
+				// fetch the catalog with hubrise catalogID
+				let catalog = (await axios.get(catalogURL, config)).data;
+				console.log('-----------------------------------------------');
+				console.log(catalog);
+				console.log('-----------------------------------------------');
+				if (catalog) {
+					// push catalog into the database
+					let categories = catalog.data.categories.map(
+						({ id, name, ref, description, parent_ref, tags }) => ({
 							categoryId: id,
 							name,
 							ref,
 							description,
 							parentRef: parent_ref,
 							tags
-						}));
-						let products = data.products.map(
-							({ name, description, skus, category_id, tags, ref }, index) => {
-								console.log(`PRODUCT: #${index}`);
-								//console.table({ id, name, description, skus, category_ref, tags, ref });
-								let variants = skus.map(
-									({ id, name, product_id, price, ref, tags, option_list_ids }, index) => {
-										console.log(`VARIANT: #${index}`);
-										/*console.table({
-										id,
+						})
+					);
+					let products = catalog.data.products.map(
+						({ id, name, description, skus, category_id, tags, ref }, index) => {
+							console.log(`PRODUCT: #${index}`);
+							//console.table({ id, name, description, skus, category_ref, tags, ref });
+							let variants = skus.map(
+								({ id, name, product_id, price, ref, tags, option_list_ids }, index) => {
+									console.log(`VARIANT: #${index}`);
+									/*console.table({
+									id,
+									name,
+									product_id,
+									price: Number(price.split(' ')[0]).toFixed(2),
+									ref,
+									tags,
+									option_list_ids
+								});*/
+									return {
+										variantId: id,
 										name,
-										product_id,
 										price: Number(price.split(' ')[0]).toFixed(2),
 										ref,
+										productId: product_id,
 										tags,
-										option_list_ids
-									});*/
-										return {
-											variantId: id,
-											name,
-											price: Number(price.split(' ')[0]).toFixed(2),
-											ref,
-											productId: product_id,
-											tags,
-											options: option_list_ids
-										};
-									}
-								);
-								return {
-									productId: id,
-									name,
-									description,
-									categoryId: category_id,
-									tags,
-									variants
-								};
-								// for each product, store the sku id, product id, sku name, product name, categoryRef, description
-							}
-						);
-						const catalog = {
-							clientId: user['_id'],
-							hubriseId: hubrise['_id'],
-							locationId: location_id,
-							catalogId: id,
-							catalogName: name,
-							products,
-							categories
-						};
-						console.log(catalog);
-						await db.Catalog.create(catalog);
-						CATALOG = catalog;
-						CATALOG_ID = id;
-						CATALOG_NAME = name;
-					})
-				);
+										options: option_list_ids
+									};
+								}
+							);
+							return {
+								productId: id,
+								name,
+								description,
+								categoryId: category_id,
+								tags,
+								variants
+							};
+						}
+					);
+					CATALOG = {
+						clientId: user['_id'],
+						hubriseId: hubrise['_id'],
+						locationId,
+						catalogId: id,
+						catalogName: name,
+						products,
+						categories
+					};
+					console.log(CATALOG);
+					await db.Catalog.create(CATALOG);
+					CATALOG_ID = catalog.id;
+					CATALOG_NAME = catalog.name;
+				}
 				res.status(200).json({
 					message: 'Catalog pulled successfully!',
 					catalog: CATALOG,

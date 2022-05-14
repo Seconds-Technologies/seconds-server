@@ -59,4 +59,5 @@ async function sendHubriseEtaUpdate(newEta, orderId, credentials, type="Hubrise 
 		return err
 	}
 }
+
 module.exports = { sendHubriseStatusUpdate, sendHubriseEtaUpdate };
