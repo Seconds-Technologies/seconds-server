@@ -135,13 +135,13 @@ router.patch('/disconnect', async (req, res, next) => {
 		if (user) {
 			const hubrise = await db.User.findOne({ clientId: user['_id'] });
 			if (hubrise) {
-				console.table(hubrise);
+				const { accessToken } = hubrise.toObject();
 				console.log('-----------------------------------------------');
 				console.log(hubrise['accessToken'])
 				// delete the hubrise callback
 				let config = {
 					headers: {
-						'X-Access-Token': hubrise['accessToken']
+						'X-Access-Token': accessToken
 					}
 				};
 				const URL = `${process.env.HUBRISE_API_BASE_URL}/callback`;
