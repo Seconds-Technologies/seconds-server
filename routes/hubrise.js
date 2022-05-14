@@ -262,15 +262,15 @@ router.get('/pull-catalog', async (req, res, next) => {
 							let variants = skus.map(
 								({ id, name, product_id, price, ref, tags, option_list_ids }, index) => {
 									console.log(`VARIANT: #${index}`);
-									/*console.table({
-									id,
-									name,
-									product_id,
-									price: Number(price.split(' ')[0]).toFixed(2),
-									ref,
-									tags,
-									option_list_ids
-								});*/
+									console.table({
+										id,
+										name,
+										product_id,
+										price: Number(price.split(' ')[0]).toFixed(2),
+										ref,
+										tags,
+										option_list_ids
+									});
 									return {
 										variantId: id,
 										name,
