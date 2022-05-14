@@ -117,9 +117,14 @@ router.get('/connect', async (req, res, next) => {
 						status: err.response.status,
 						message: err.response.data.message
 				  })
-				: next({
+				: err.response.data['error_type']
+				? next({
 						status: err.response.status,
 						message: err.response.data['error_type']
+				  })
+				: next({
+						status: err.response.status,
+						message: err.response.data
 				  });
 		} else {
 			console.error('ERROR', err);
@@ -137,7 +142,7 @@ router.patch('/disconnect', async (req, res, next) => {
 			if (hubrise) {
 				const { accessToken } = hubrise.toObject();
 				console.log('-----------------------------------------------');
-				console.log(hubrise['accessToken'])
+				console.log(hubrise['accessToken']);
 				// delete the hubrise callback
 				let config = {
 					headers: {
