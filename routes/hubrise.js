@@ -223,15 +223,15 @@ router.get('/pull-catalog', async (req, res, next) => {
 	try {
 		const { email } = req.query;
 		const user = await db.User.findOne({ email });
-		console.log('USER:', !!user);
 		let CATALOG;
 		let CATALOG_ID;
 		let CATALOG_NAME;
 		if (user) {
 			const hubrise = await db.Hubrise.findOne({ clientId: user['_id'] });
 			if (hubrise) {
+				console.log('HUBRISE:', !!hubrise);
 				let { locationId, catalogId, accessToken } = hubrise.toObject();
-				const catalogEndpoint = `catalogs/${catalogId}`;
+				const catalogEndpoint = `/catalogs/${catalogId}`;
 				const catalogURL = process.env.HUBRISE_API_BASE_URL + catalogEndpoint;
 				const config = {
 					headers: {
