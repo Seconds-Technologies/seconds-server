@@ -224,13 +224,11 @@ router.get('/pull-catalog', async (req, res, next) => {
 		const { email } = req.query;
 		const user = await db.User.findOne({ email });
 		let CATALOG;
-		let CATALOG_ID;
-		let CATALOG_NAME;
 		if (user) {
 			const hubrise = await db.Hubrise.findOne({ clientId: user['_id'] });
 			if (hubrise) {
 				console.log('HUBRISE:', !!hubrise);
-				let { locationId, catalogId, accessToken } = hubrise.toObject();
+				let { locationId, catalogId, catalogName, accessToken } = hubrise.toObject();
 				const catalogEndpoint = `/catalogs/${catalogId}`;
 				const catalogURL = process.env.HUBRISE_API_BASE_URL + catalogEndpoint;
 				const config = {
@@ -262,15 +260,6 @@ router.get('/pull-catalog', async (req, res, next) => {
 							let variants = skus.map(
 								({ id: variantId, ref: variantRef, name, product_id: productId, price, tags, option_list_ids }, index) => {
 									console.log(`VARIANT: #${index}`);
-									console.table({
-										variantId,
-										name,
-										productId,
-										price: Number(price.split(' ')[0]).toFixed(2),
-										variantRef,
-										tags,
-										option_list_ids
-									});
 									return {
 										variantId,
 										name,
@@ -282,14 +271,6 @@ router.get('/pull-catalog', async (req, res, next) => {
 									};
 								}
 							);
-							console.table({
-								id: productId,
-								productRef,
-								name,
-								description,
-								categoryId,
-								tags
-							});
 							return {
 								productId,
 								name,
@@ -304,22 +285,24 @@ router.get('/pull-catalog', async (req, res, next) => {
 						clientId: user['_id'],
 						hubriseId: hubrise['_id'],
 						locationId,
-						catalogId: id,
-						catalogName: name,
+						catalogId: catalog.id,
+						catalogName: catalog.name,
 						products,
 						categories
 					};
 					console.log(CATALOG);
 					await db.Catalog.create(CATALOG);
-					CATALOG_ID = catalog.id;
-					CATALOG_NAME = catalog.name;
+					res.status(200).json({
+						message: 'Catalog pulled successfully!',
+						catalog: CATALOG,
+						catalogId: CATALOG.catalogId,
+						catalogName: CATALOG.catalogName
+					});
+				} else {
+					let error = new Error(`There was a problem fetching the catalog '${catalogName}'. Please that it is accessible in your hubrise portal`);
+					error.status = 400;
+					throw error;
 				}
-				res.status(200).json({
-					message: 'Catalog pulled successfully!',
-					catalog: CATALOG,
-					catalogId: CATALOG_ID,
-					catalogName: CATALOG_NAME
-				});
 			} else {
 				let error = new Error(`This user has no hubrise account integrated`);
 				error.status = 404;
