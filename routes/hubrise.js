@@ -295,8 +295,8 @@ router.get('/pull-catalog', async (req, res, next) => {
 					res.status(200).json({
 						message: 'Catalog pulled successfully!',
 						catalog: CATALOG,
-						catalogId: CATALOG.catalogId,
-						catalogName: CATALOG.catalogName
+						catalogId: catalog.id,
+						catalogName: catalog.name
 					});
 				} else {
 					let error = new Error(`There was a problem fetching the catalog '${catalogName}'. Please that it is accessible in your hubrise portal`);
