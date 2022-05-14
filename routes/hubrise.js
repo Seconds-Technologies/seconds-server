@@ -256,37 +256,45 @@ router.get('/pull-catalog', async (req, res, next) => {
 						})
 					);
 					let products = catalog.data.products.map(
-						({ id, name, description, skus, category_id, tags, ref }, index) => {
+						({ id: productId, ref: productRef, name, description, skus, category_id: categoryId, tags }, index) => {
 							console.log(`PRODUCT: #${index}`);
 							//console.table({ id, name, description, skus, category_ref, tags, ref });
 							let variants = skus.map(
-								({ id, name, product_id, price, ref, tags, option_list_ids }, index) => {
+								({ id: variantId, ref: variantRef, name, product_id: productId, price, tags, option_list_ids }, index) => {
 									console.log(`VARIANT: #${index}`);
 									console.table({
-										id,
+										variantId,
 										name,
-										product_id,
+										productId,
 										price: Number(price.split(' ')[0]).toFixed(2),
-										ref,
+										variantRef,
 										tags,
 										option_list_ids
 									});
 									return {
-										variantId: id,
+										variantId,
 										name,
 										price: Number(price.split(' ')[0]).toFixed(2),
-										ref,
-										productId: product_id,
+										ref: variantRef,
+										productId,
 										tags,
 										options: option_list_ids
 									};
 								}
 							);
-							return {
-								productId: id,
+							console.table({
+								id: productId,
+								productRef,
 								name,
 								description,
-								categoryId: category_id,
+								categoryId,
+								tags
+							});
+							return {
+								productId,
+								name,
+								description,
+								categoryId,
 								tags,
 								variants
 							};
