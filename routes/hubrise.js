@@ -133,7 +133,7 @@ router.patch('/disconnect', async (req, res, next) => {
 		const { email } = req.body;
 		const user = await db.User.findOne({ email });
 		if (user) {
-			const hubrise = await db.User.findOne({ clientId: user['_id'] });
+			const hubrise = await db.Hubrise.findOne({ clientId: user['_id'] });
 			if (hubrise) {
 				const { accessToken } = hubrise.toObject();
 				console.log('-----------------------------------------------');
