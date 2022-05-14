@@ -86,7 +86,14 @@ router.get('/connect', async (req, res, next) => {
 			locationName: result.location_name,
 			locationId: result.location_id,
 			catalogId: result.catalog_id,
-			catalogName: result.catalog_name
+			catalogName: result.catalog_name,
+			options: {
+				triggers: {
+					enabled: false,
+					statuses: [],
+					serviceTypeRefs: []
+				}
+			}
 		});
 		// create webhook subscription
 		URL = `${process.env.HUBRISE_API_BASE_URL}/callback`;
@@ -299,7 +306,7 @@ router.get('/pull-catalog', async (req, res, next) => {
 						catalogName: catalog.name
 					});
 				} else {
-					let error = new Error(`There was a problem fetching the catalog '${catalogName}'. Please that it is accessible in your hubrise portal`);
+					let error = new Error(`There was a problem fetching the catalog '${catalogName}'. Please check that it is accessible in your hubrise portal`);
 					error.status = 400;
 					throw error;
 				}
