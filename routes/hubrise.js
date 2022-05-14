@@ -135,6 +135,9 @@ router.patch('/disconnect', async (req, res, next) => {
 		if (user) {
 			const hubrise = await db.User.findOne({ clientId: user['_id'] });
 			if (hubrise) {
+				console.table(hubrise);
+				console.log('-----------------------------------------------');
+				console.log(hubrise['accessToken'])
 				// delete the hubrise callback
 				let config = {
 					headers: {
@@ -225,7 +228,6 @@ router.get('/pull-catalog', async (req, res, next) => {
 				let { locationId, catalogId, accessToken } = hubrise.toObject();
 				const catalogEndpoint = `catalogs/${catalogId}`;
 				const catalogURL = process.env.HUBRISE_API_BASE_URL + catalogEndpoint;
-				console.table({ catalogURL });
 				const config = {
 					headers: {
 						'X-Access-Token': accessToken
