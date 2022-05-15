@@ -41,11 +41,11 @@ async function sendHubriseEtaUpdate(newEta, orderId, credentials, type="Hubrise 
 				'X-ACCESS-TOKEN': credentials.accessToken
 			}
 		}
-		const response = (await axios.patch(URL, { confirmed_time: moment(newEta).toISOString() }, config)).data;
+		const response = (await axios.patch(URL, { confirmed_time: newEta }, config)).data;
 		console.log('-----------------------------------------------');
 		console.table({ID: response.id, STATUS: response.status})
 		console.log('-----------------------------------------------');
-		return `Confirmed Time is now ${moment(newEta).toISOString()}`
+		return `Confirmed Time is now ${moment(newEta).format()}`
 	} catch (err) {
 		console.log('************************************************');
 		console.error(err);
