@@ -428,6 +428,11 @@ const deleteUser = async (req, res, next) => {
 			res.status(200).json({
 				message: "USER DELETED"
 			})
+		} else {
+			return next({
+				status: 404,
+				message: `No user found with ID ${userId}`
+			})
 		}
 	} catch (err) {
 	    console.error(err)
