@@ -9,6 +9,7 @@ const { S3_BUCKET_NAMES } = require('../constants');
 const { defaultSettings } = require('@seconds-technologies/database_schemas/constants');
 const moment = require('moment');
 const { newMagicBellUser, newKanaUser } = require('../helpers/auth');
+const { magicBellAxios } = require('../config/axios');
 
 const login = async (req, res, next) => {
 	try {
@@ -401,8 +402,41 @@ const resetPassword = async (req, res) => {
 		});
 	} catch (err) {
 		console.error(err);
+		throw err
 	}
 };
+
+const deleteUser = async (req, res, next) => {
+	try {
+	    const { userId } = req.query;
+		console.log(userId)
+		const user = await db.User.findOne({_id: userId})
+		if(user) {
+			const { stripeCustomerId, magicbellId } = user.toObject();
+			// delete a user from stripe
+			await stripe.customers.del(stripeCustomerId)
+			// delete a user from magic bell
+			await magicBellAxios.delete(`${process.env.MAGIC_BELL_HOST}/users/${magicbellId}`)
+			// delete user from database
+			await db.User.deleteOne({ _id: userId })
+			// delete settings that belong to that user
+			await db.Settings.deleteOne({ clientId: userId })
+			// delete any hubrise accounts that belong to that user
+			await db.Hubrise.deleteOne({clientId: userId})
+			// delete all jobs belonging to that user
+			await db.Job.deleteMany({clientId: userId})
+			res.status(200).json({
+				message: "USER DELETED"
+			})
+		}
+	} catch (err) {
+	    console.error(err)
+		return next({
+			status: err.status ? err.status : 500,
+			message: err.message
+		})
+	}
+}
 
 module.exports = {
 	register,
@@ -410,5 +444,6 @@ module.exports = {
 	newStripeCustomer,
 	sendPasswordResetEmail,
 	validateCredentials,
-	resetPassword
+	resetPassword,
+	deleteUser
 };

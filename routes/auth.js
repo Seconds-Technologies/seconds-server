@@ -7,7 +7,8 @@ const {
 	sendPasswordResetEmail,
 	newStripeCustomer,
 	validateCredentials,
-	resetPassword
+	resetPassword,
+	deleteUser
 } = require("../controllers/auth")
 
 router.post("/register", register);
@@ -16,5 +17,6 @@ router.post('/validate', validateCredentials)
 router.post('/stripe-customer', newStripeCustomer)
 router.post("/send-reset-email", sendPasswordResetEmail);
 router.patch("/reset-password", resetPassword);
+router.delete("/remove", deleteUser)
 
 module.exports = router;
