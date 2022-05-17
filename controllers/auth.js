@@ -176,7 +176,7 @@ const register = async (req, res, next) => {
 			subscriptionId,
 			subscriptionPlan
 		} = user;
-		//create a jwt token
+		// create a jwt token
 		let token = jwt.sign(
 			{
 				id,
@@ -205,7 +205,7 @@ const register = async (req, res, next) => {
 			})
 			.catch(err => console.error(err));
 		// create a kana user and store user's accessToken to db
-		newKanaUser(id, email, firstname, lastname, customer.id)
+		process.env.NODE_ENV !== 'production' && newKanaUser(id, email, firstname, lastname, customer.id)
 			.then(({ token }) => {
 				user.kanaAccessToken = token;
 				user.save();
