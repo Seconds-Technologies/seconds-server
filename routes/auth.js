@@ -17,6 +17,6 @@ router.post('/validate', validateCredentials)
 router.post('/stripe-customer', newStripeCustomer)
 router.post("/send-reset-email", sendPasswordResetEmail);
 router.patch("/reset-password", resetPassword);
-router.delete("/remove", deleteUser)
+router.delete("/delete", deleteUser)
 
 module.exports = router;
