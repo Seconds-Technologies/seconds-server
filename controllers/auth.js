@@ -206,12 +206,13 @@ const register = async (req, res, next) => {
 			})
 			.catch(err => console.error(err));
 		// create a kana user and store user's accessToken to db
-		process.env.NODE_ENV !== 'production' && newKanaUser(id, email, firstname, lastname, customer.id)
-			.then(({ token }) => {
-				user.kanaAccessToken = token;
-				user.save();
-			})
-			.catch(err => console.error(err));
+		process.env.NODE_ENV !== 'production' &&
+			newKanaUser(id, email, firstname, lastname, customer.id)
+				.then(({ token }) => {
+					user.kanaAccessToken = token;
+					user.save();
+				})
+				.catch(err => console.error(err));
 		sendEmail(
 			{
 				email: 'ola@useseconds.com',
@@ -402,50 +403,55 @@ const resetPassword = async (req, res) => {
 		});
 	} catch (err) {
 		console.error(err);
-		throw err
+		throw err;
 	}
 };
 
 const deleteUser = async (req, res, next) => {
 	try {
-	    const { userId, email } = req.query;
-		console.table({userId, email})
+		const { userId, email } = req.query;
+		console.table({ userId, email });
 		let user = null;
-		if (email) user = await db.User.findOne({email: email})
-		else if (userId) user = await db.User.findOne({_id: userId})
-		if(user) {
-			console.log(user)
+		if (email) user = await db.User.findOne({ email: email });
+		else if (userId) user = await db.User.findOne({ _id: userId });
+		if (user) {
+			console.log(user);
 			const { _id, stripeCustomerId, magicbellId } = user.toObject();
-			console.table({stripeCustomerId, magicbellId})
+			console.table({ stripeCustomerId, magicbellId });
 			// delete a user from stripe
-			await stripe.customers.del(stripeCustomerId)
+			stripe.customers.del(stripeCustomerId)
+				.then(() => console.log('Stripe account deleted'))
+				.catch(err => console.error("Error deleting stripe customer", err))
 			// delete a user from magic bell
-			await magicBellAxios.delete(`${process.env.MAGIC_BELL_HOST}/users/${magicbellId}`)
+			magicBellAxios
+				.delete(`${process.env.MAGIC_BELL_HOST}/users/${magicbellId}`)
+				.then(() => console.log('magicbell account deleted'))
+				.catch(err => console.error('Error deleting Magicbell user', err));
 			// delete settings that belong to that user
-			await db.Settings.deleteOne({ clientId: _id })
+			await db.Settings.deleteOne({ clientId: _id });
 			// delete any hubrise accounts that belong to that user
-			await db.Hubrise.deleteOne({clientId: _id})
+			await db.Hubrise.deleteOne({ clientId: _id });
 			// delete all jobs belonging to that user
-			await db.Job.deleteMany({clientId: _id })
+			await db.Job.deleteMany({ clientId: _id });
 			// delete user from database
-			await db.User.findByIdAndDelete(_id)
+			await db.User.findByIdAndDelete(_id);
 			res.status(200).json({
-				message: "USER DELETED"
-			})
+				message: 'USER DELETED'
+			});
 		} else {
 			return next({
 				status: 404,
 				message: `No user found with ID ${userId}`
-			})
+			});
 		}
 	} catch (err) {
-	    console.error(err)
+		console.error(err);
 		return next({
 			status: err.status ? err.status : 500,
 			message: err.message
-		})
+		});
 	}
-}
+};
 
 module.exports = {
 	register,
