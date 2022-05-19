@@ -408,11 +408,15 @@ const resetPassword = async (req, res) => {
 
 const deleteUser = async (req, res, next) => {
 	try {
-	    const { userId } = req.query;
-		console.log(userId)
-		const user = await db.User.findOne({_id: userId})
+	    const { userId, email } = req.query;
+		console.table({userId, email})
+		let user = null;
+		if (email) user = await db.User.findOne({email: email})
+		else if (userId) user = await db.User.findOne({_id: userId})
 		if(user) {
+			console.log(user)
 			const { stripeCustomerId, magicbellId } = user.toObject();
+			console.table({stripeCustomerId, magicbellId})
 			// delete a user from stripe
 			await stripe.customers.del(stripeCustomerId)
 			// delete a user from magic bell
