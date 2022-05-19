@@ -415,20 +415,20 @@ const deleteUser = async (req, res, next) => {
 		else if (userId) user = await db.User.findOne({_id: userId})
 		if(user) {
 			console.log(user)
-			const { stripeCustomerId, magicbellId } = user.toObject();
+			const { _id, stripeCustomerId, magicbellId } = user.toObject();
 			console.table({stripeCustomerId, magicbellId})
 			// delete a user from stripe
 			await stripe.customers.del(stripeCustomerId)
 			// delete a user from magic bell
 			await magicBellAxios.delete(`${process.env.MAGIC_BELL_HOST}/users/${magicbellId}`)
-			// delete user from database
-			await db.User.deleteOne({ _id: userId })
 			// delete settings that belong to that user
-			await db.Settings.deleteOne({ clientId: userId })
+			await db.Settings.deleteOne({ clientId: _id })
 			// delete any hubrise accounts that belong to that user
-			await db.Hubrise.deleteOne({clientId: userId})
+			await db.Hubrise.deleteOne({clientId: _id})
 			// delete all jobs belonging to that user
-			await db.Job.deleteMany({clientId: userId})
+			await db.Job.deleteMany({clientId: _id })
+			// delete user from database
+			await db.User.findByIdAndDelete(_id)
 			res.status(200).json({
 				message: "USER DELETED"
 			})
