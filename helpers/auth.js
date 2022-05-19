@@ -31,8 +31,7 @@ async function newMagicBellUser(mongoId, email, phone, firstname, lastname, comp
 		console.log(response);
 		return response.user.id;
 	} catch (err) {
-		console.error(err);
-		throw err;
+		throw err.response.data ? err.response.data : err.response;
 	}
 }
 
