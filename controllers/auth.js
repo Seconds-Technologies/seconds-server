@@ -198,6 +198,7 @@ const register = async (req, res, next) => {
 		console.log('Stripe customer:', customer);
 		console.log('----------------------------');
 		user.stripeCustomerId = customer.id;
+		user.save();
 		// create magic bell user and store magicbell user id to db
 		newMagicBellUser(id, email, phone, firstname, lastname, company, fullAddress)
 			.then(magicBellId => {
