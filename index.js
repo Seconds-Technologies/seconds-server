@@ -9,9 +9,10 @@ const db = require('./models/index');
 const timeout = require('connect-timeout')
 //middleware
 const { errorHandler } = require('./helpers/error');
-const { authenticateUser } = require('./middleware/auth');
+const { authenticateUser, authenticateAdmin } = require('./middleware/auth');
 const { wooCommerceTimeout } = require('./middleware');
 //routes
+const adminRoutes = require('./routes/admin')
 const authRoutes = require('./routes/auth');
 const mainRoutes = require('./routes/main');
 const shopifyRoutes = require('./routes/shopify');
@@ -56,6 +57,10 @@ app.get('/server', (req, res) => {
 		message: 'Welcome to Shopify!',
 	});
 });
+
+// ADMIN ROUTES
+app.use('/server/admin', authenticateAdmin, adminRoutes)
+
 // CORE ROUTES
 app.use('/uploads', express.static('uploads'));
 app.use('/server/auth', authRoutes);
