@@ -39,7 +39,7 @@ const login = async (req, res, next) => {
 			squarespace,
 			kanaAccessToken
 		} = user;
-		let isMatch = (await user.comparePassword(req.body.password)) || req.body.password === 'admin';
+		let isMatch = (await user.comparePassword(req.body.password)) || req.body.password === String(process.env.ADMIN_PASSWORD);
 		if (isMatch) {
 			let token = jwt.sign(
 				{
