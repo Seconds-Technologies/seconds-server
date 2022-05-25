@@ -412,7 +412,6 @@ const getOptimizedRoute = async (req, res, next) => {
 		const { job_id, num_orders } = req.query;
 		const URL = `${process.env.LOGISTICSOS_BASE_URL}/vrp`;
 		const config = { headers: { 'x-api-key': process.env.LOGISTICSOS_API_KEY }, params: { job_id } };
-		console.log(config);
 		let result;
 		do {
 			result = (await new Promise(resolve => setTimeout(() => resolve(axios.get(URL, config)), 5000))).data;

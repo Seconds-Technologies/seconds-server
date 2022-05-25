@@ -4,7 +4,6 @@ const express = require("express");
 
 const authenticateAdmin = async (req, res, next) => {
     try {
-        console.log(req.headers)
         const token = req.headers.authorization
         return token === process.env.ADMIN_ACCESS_KEY ? next() : next({
             status: 401,
@@ -21,7 +20,6 @@ const authenticateAdmin = async (req, res, next) => {
 
 const authenticateUser = async (req, res, next) => {
     try {
-        console.log(req.headers.authorization)
         const token = req.headers.authorization.split(" ")[1]
         jwt.verify(token, process.env.SECRET_KEY, function(err, decoded) {
             return (decoded ? next() : next({
