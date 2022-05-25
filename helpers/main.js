@@ -130,9 +130,9 @@ const uploadProfileImage = async (req, res, next) => {
 			{ new: true }
 		);
 		if (user) {
-			console.log("USER", user.profileImage);
+			console.log('USER', user.profileImage);
 		} else {
-			console.log("DRIVER", driver.profileImage);
+			console.log('DRIVER', driver.profileImage);
 		}
 		// retrieve image object from s3 convert to base64
 		let base64Image = await getBase64Image(filename, S3_BUCKET_NAMES.PROFILE_IMAGE);
@@ -169,8 +169,8 @@ const updateDeliveryStrategies = async (req, res, next) => {
 
 const synchronizeUserInfo = async (req, res, next) => {
 	try {
-		const { email: EMAIL } = req.query;
-		let user = await db.User.findOne({ email: EMAIL });
+		const { email } = req.query;
+		let user = await db.User.findOne({ email });
 		if (user) {
 			let {
 				_id,
@@ -195,6 +195,10 @@ const synchronizeUserInfo = async (req, res, next) => {
 			let drivers = await db.Driver.find({ clientIds: _id });
 			drivers.sort((a, b) => b.createdAt - a.createdAt);
 			const settings = await db.Settings.findOne({ clientId: _id });
+			console.table({
+				fullAddress,
+				address
+			});
 			res.status(200).json({
 				id: _id,
 				lastLogin,
