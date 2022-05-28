@@ -458,7 +458,7 @@ const deleteOrders = async (req, res, next) => {
 			const result = await db.Job.deleteMany(
 				{
 					clientId: user._id,
-					'jobSpecification.orderNumber': { $in: orderNumbers }
+					'jobSpecification.deliveries.orderNumber': { $in: orderNumbers }
 				},
 				{ returnOriginal: true }
 			);
