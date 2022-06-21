@@ -329,9 +329,40 @@ const deleteDrivers = async (req, res, next) => {
 		console.log(driverIds);
 		const user = await db.User.findOne({ email });
 		if (user) {
-			const drivers = await db.Driver.deleteMany({ _id: driverIds, clientIds: user._id }, { new: true });
-			console.log(drivers);
-			res.status(200).json({ message: 'SUCCESS' });
+			await db.Driver.deleteMany({ _id: driverIds, clientIds: user['_id'] }, { new: true });
+			let drivers = await db.Driver.find({clientIds: user['_id']})
+			drivers.sort((a, b) => b.createdAt - a.createdAt);
+			// drivers.forEach(driver => console.log(driver.createdAt));
+			drivers = drivers.map(driver => {
+				let {
+					_id: id,
+					firstname,
+					lastname,
+					phone,
+					email,
+					vehicle,
+					status,
+					isOnline,
+					createdAt,
+					verified
+				} = driver.toObject();
+				return {
+					id,
+					firstname,
+					lastname,
+					phone,
+					email,
+					vehicle,
+					status,
+					isOnline,
+					createdAt,
+					verified
+				};
+			});
+			res.status(200).json({
+				message: 'SUCCESS',
+				drivers
+			});
 		} else {
 			return next({
 				status: 404,

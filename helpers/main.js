@@ -194,11 +194,34 @@ const synchronizeUserInfo = async (req, res, next) => {
 			// lookup integrated drivers
 			let drivers = await db.Driver.find({ clientIds: _id });
 			drivers.sort((a, b) => b.createdAt - a.createdAt);
+			drivers = drivers.map(driver => {
+				let {
+					_id: id,
+					firstname,
+					lastname,
+					phone,
+					email,
+					vehicle,
+					status,
+					isOnline,
+					createdAt,
+					verified
+				} = driver.toObject();
+				return {
+					id,
+					firstname,
+					lastname,
+					phone,
+					email,
+					vehicle,
+					status,
+					isOnline,
+					createdAt,
+					verified
+				};
+			})
+			console.log(drivers)
 			const settings = await db.Settings.findOne({ clientId: _id });
-			console.table({
-				fullAddress,
-				address
-			});
 			res.status(200).json({
 				id: _id,
 				lastLogin,
@@ -218,32 +241,7 @@ const synchronizeUserInfo = async (req, res, next) => {
 				subscriptionId,
 				subscriptionPlan,
 				settings,
-				drivers: drivers.map(driver => {
-					let {
-						_id: id,
-						firstname,
-						lastname,
-						phone,
-						email,
-						vehicle,
-						status,
-						isOnline,
-						createdAt,
-						verified
-					} = driver.toObject();
-					return {
-						id,
-						firstname,
-						lastname,
-						phone,
-						email,
-						vehicle,
-						status,
-						isOnline,
-						createdAt,
-						verified
-					};
-				}),
+				drivers,
 				message: 'User info synchronized successfully'
 			});
 		} else {
